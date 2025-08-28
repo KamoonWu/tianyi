@@ -1,0 +1,129 @@
+@import "../../style/modern.wxss";
+
+/* 页面特定样式 */
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 750rpx) {
+  .page-container {
+    padding: 16rpx;
+  }
+}
+
+/* 排盘区域样式 */
+.chart-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 0px;
+  padding: 16px 0;
+  margin: 0 0 16px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* 中宫信息区域样式 */
+.center-palace {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.info-row {
+  margin-bottom: 8px;
+  font-size: 8px;
+  line-height: 1.2;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.name {
+  font-weight: bold;
+  color: #1e293b;
+  margin-right: 12px;
+}
+
+.five-elements {
+  color: #3b82f6;
+}
+
+.true-solar-time, .clock-time {
+  color: #059669;
+}
+
+.lunar-time {
+  color: #7c3aed;
+}
+
+.master-info {
+  color: #dc2626;
+}
+
+.four-pillars {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.pillars-left, .pillars-right {
+  flex: 1;
+}
+
+.pillars-title {
+  font-size: 8px;
+  color: #6b7280;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.pillar-group {
+  display: flex;
+  gap: 8px;
+}
+
+.pillar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 4px;
+  padding: 2px 4px;
+  min-width: 20px;
+}
+
+.pillar-text {
+  font-size: 8px;
+  color: #1e293b;
+  line-height: 1;
+}
+
+/* 连线开关按钮样式 */
+.lines-toggle {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #3b82f6;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 8px;
+  transition: all 0.3s ease;
+}
+
+.lines-toggle.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.lines-toggle:active {
+  transform: scale(0.95);
+}
+

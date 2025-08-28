@@ -1,0 +1,136 @@
+<view class="page-container">
+  <view class="chart-section">
+    <view class="chart-controls">
+      <!-- 连线开关 -->
+      <button class="lines-toggle {{showLines ? 'active' : ''}}" bindtap="toggleLines">
+        {{showLines ? '隐藏连线' : '显示连线'}}
+      </button>
+      <div class="control-spacer"></div>
+      <button class="btn btn-outline" size="mini" bindtap="goSettings">设置</button>
+      <button class="btn btn-primary" size="mini" bindtap="testChart">测试</button>
+    </view>
+    <zwds-chart 
+      id="zwds-chart"
+      palaces="{{chart.palaces}}"
+      center="{{chart.center}}"
+      flowYear="{{flowYear}}"
+      showLines="{{showLines}}"
+      bind:palaceClick="onPalaceClick">
+    </zwds-chart>
+  </view>
+
+  <view class="fortune-section">
+    <view class="fortune-controls">
+      <button class="btn btn-outline" size="mini" data-range="today" bindtap="switchRange">今日</button>
+      <button class="btn btn-outline" size="mini" data-range="tomorrow" bindtap="switchRange">明日</button>
+      <button class="btn btn-outline" size="mini" data-range="week" bindtap="switchRange">本周</button>
+      <button class="btn btn-outline" size="mini" data-range="month" bindtap="switchRange">本月</button>
+      <button class="btn btn-outline" size="mini" data-range="year" bindtap="switchRange">本年</button>
+    </view>
+    <view class="fortune-content">
+      <view class="fortune-title">运势（{{fortunes.rangeText}}）</view>
+      <view class="fortune-grid">
+        <view class="fortune-item">
+          <span class="fortune-label">事业</span>
+          <span class="fortune-value">{{fortunes.career}}</span>
+        </view>
+        <view class="fortune-item">
+          <span class="fortune-label">爱情</span>
+          <span class="fortune-value">{{fortunes.love}}</span>
+        </view>
+        <view class="fortune-item">
+          <span class="fortune-label">财运</span>
+          <span class="fortune-value">{{fortunes.wealth}}</span>
+        </view>
+        <view class="fortune-item">
+          <span class="fortune-label">健康</span>
+          <span class="fortune-value">{{fortunes.health}}</span>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="analysis-section">
+    <view class="analysis-header">
+      <view class="analysis-title">分析数据</view>
+      <button class="btn btn-outline" size="mini" bindtap="runDiagnostics">一键自检</button>
+    </view>
+    <view class="analysis-content">
+      <view class="analysis-grid">
+        <view class="analysis-item">
+          <span class="analysis-label">生肖</span>
+          <span class="analysis-value">{{analysis.zodiac || '—'}}</span>
+        </view>
+        <view class="analysis-item">
+          <span class="analysis-label">星座</span>
+          <span class="analysis-value">{{analysis.constellation || '—'}}</span>
+        </view>
+        <view class="analysis-item">
+          <span class="analysis-label">四柱</span>
+          <span class="analysis-value">{{analysis.fourPillars ? analysis.fourPillars.year + ' / ' + analysis.fourPillars.month + ' / ' + analysis.fourPillars.day + ' / ' + analysis.fourPillars.hour : '—'}}</span>
+        </view>
+        <view class="analysis-item">
+          <span class="analysis-label">运限</span>
+          <span class="analysis-value">{{analysis.cycles ? '可用' : '—'}}；流耀：{{analysis.dynamicStars ? '可用' : '—'}}</span>
+        </view>
+      </view>
+      
+      <!-- 格局分析 -->
+      <view wx:if="{{analysis.patterns && analysis.patterns.length > 0}}" class="patterns-section">
+        <view class="patterns-title">命盘格局</view>
+        <view wx:for="{{analysis.patterns}}" wx:key="index" class="pattern-card">
+          <view class="pattern-name">{{item.pattern.name}}</view>
+          <view class="pattern-description">{{item.pattern.description}}</view>
+          <view class="pattern-effects">{{item.pattern.effects}}</view>
+          <view class="pattern-details">
+            涉及宫位：{{item.palaces.join('、')}} | 相关星曜：{{item.stars.join('、')}}
+          </view>
+        </view>
+      </view>
+      
+      <view wx:if="{{checks}}" class="checks-section">
+        <view class="checks-grid">
+          <view class="check-item">
+            <span class="check-label">命宫含紫微</span>
+            <span class="check-value">{{checks.palaceHasStars ? '是' : '否'}}</span>
+          </view>
+          <view class="check-item">
+            <span class="check-label">命宫三方有紫微</span>
+            <span class="check-value">{{checks.sanFangHasStars ? '是' : '否'}}</span>
+          </view>
+          <view class="check-item">
+            <span class="check-label">命宫三方有四化</span>
+            <span class="check-value">{{checks.sanFangHasHua ? '是' : '否'}}</span>
+          </view>
+          <view class="check-item">
+            <span class="check-label">紫微有四化</span>
+            <span class="check-value">{{checks.starHasHua ? '是' : '否'}}</span>
+          </view>
+          <view class="check-item">
+            <span class="check-label">紫微三方有四化</span>
+            <span class="check-value">{{checks.starSanFangHasHua ? '是' : '否'}}</span>
+          </view>
+          <view class="check-item">
+            <span class="check-label">紫微亮度佳</span>
+            <span class="check-value">{{checks.starIsBright ? '是' : '否'}}</span>
+          </view>
+          <view class="check-item">
+            <span class="check-label">甲天干四化</span>
+            <span class="check-value">{{checks.siHuaByJia || '—'}}</span>
+          </view>
+          <view class="check-item">
+            <span class="check-label">紫微所在宫</span>
+            <span class="check-value">{{checks.starPalace || '—'}}；对宫：{{checks.starOpposite || '—'}}</span>
+          </view>
+          <view class="check-item">
+            <span class="check-label">命宫空宫</span>
+            <span class="check-value">{{checks.isPalaceEmpty ? '是' : '否'}}；飞星回命：{{checks.palaceFlyToSelf ? '是' : '否'}}</span>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+
+</view>
+

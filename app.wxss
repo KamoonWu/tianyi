@@ -1,0 +1,49 @@
+page {
+  background-color: #f7f8fa;
+  color: #111;
+}
+
+.page-padding {
+  padding: 16rpx 24rpx;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.04);
+}
+
+.card + .card {
+  margin-top: 24rpx;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.row-space-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn {
+  padding: 16rpx 24rpx;
+  border-radius: 12rpx;
+  background: #3478f6;
+  color: #fff;
+  font-size: 28rpx;
+}
+
+.btn-secondary {
+  background: #eef3ff;
+  color: #3478f6;
+}
+@import 'style/iconfont.wxss';
+
+@import 'style/theme.wxss';
+
+.cell--noborder .t-cell::after {
+  border-bottom: none !important;
+}

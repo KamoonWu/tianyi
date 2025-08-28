@@ -1,0 +1,65 @@
+<view class="page-padding">
+  <view class="row-space-between" style="margin-bottom: 24rpx;">
+    <view style="font-size: 36rpx; font-weight: 600;">设置出生信息</view>
+    <button class="btn btn-secondary" size="mini" bindtap="saveProfiles">保存</button>
+  </view>
+
+  <block wx:for="{{profiles}}" wx:key="index">
+    <view class="card" style="padding: 24rpx;">
+      <view class="row-space-between" style="margin-bottom: 16rpx;">
+        <view style="font-size: 30rpx; font-weight: 600;">档案 {{index + 1}}</view>
+        <radio checked="{{activeProfileIndex === index}}" data-index="{{index}}" bindtap="chooseActive">设为当前</radio>
+      </view>
+
+      <view style="margin-bottom: 12rpx;">
+        <view style="font-size: 26rpx; color: #888;">姓名</view>
+        <input placeholder="请输入姓名" value="{{item.name}}" data-index="{{index}}" data-field="name" bindinput="onFieldChange"/>
+      </view>
+
+      <view class="row-space-between" style="gap: 16rpx; margin-bottom: 12rpx;">
+        <view style="flex:1;">
+          <view style="font-size: 26rpx; color: #888;">日期</view>
+          <picker mode="date" value="{{item.date}}" data-index="{{index}}" data-field="date" bindchange="onPickerChange">
+            <view style="padding: 16rpx 0;">{{item.date}}</view>
+          </picker>
+        </view>
+        <view style="flex:1;">
+          <view style="font-size: 26rpx; color: #888;">时间</view>
+          <picker mode="time" value="{{item.time}}" data-index="{{index}}" data-field="time" bindchange="onPickerChange">
+            <view style="padding: 16rpx 0;">{{item.time}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="row-space-between" style="gap: 16rpx; margin-bottom: 12rpx;">
+        <view style="flex:1;">
+          <view style="font-size: 26rpx; color: #888;">历法</view>
+          <picker mode="selector" range="{{calendarOptions}}" value="{{item.calendarType === 'lunar' ? 0 : 1}}" data-index="{{index}}" data-field="calendarType" bindchange="onCalendarChange">
+            <view style="padding: 16rpx 0;">{{item.calendarType === 'lunar' ? '农历' : '公历'}}</view>
+          </picker>
+        </view>
+        <view style="flex:1;">
+          <view style="font-size: 26rpx; color: #888;">性别</view>
+          <picker mode="selector" range="{{genderOptions}}" value="{{item.gender === 'male' ? 0 : (item.gender === 'female' ? 1 : 2)}}" data-index="{{index}}" data-field="gender" bindchange="onGenderChange">
+            <view style="padding: 16rpx 0;">{{item.gender === 'male' ? '男' : (item.gender === 'female' ? '女' : '未知')}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <view style="margin-bottom: 12rpx;">
+        <view style="font-size: 26rpx; color: #888;">出生城市</view>
+        <input placeholder="如：北京市" value="{{item.city}}" data-index="{{index}}" data-field="city" bindinput="onFieldChange"/>
+      </view>
+
+      <label class="row" style="gap: 12rpx;">
+        <switch checked="{{item.trueSolarTime}}" data-index="{{index}}" data-field="trueSolarTime" bindchange="onSwitchChange"/>
+        <text>真太阳时</text>
+      </label>
+    </view>
+  </block>
+
+  <view style="margin-top: 24rpx;" wx:if="{{profiles.length < 2}}">
+    <button class="btn" bindtap="addProfile">添加档案</button>
+  </view>
+</view>
+

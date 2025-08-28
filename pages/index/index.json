@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "zwds-chart": "/components/zwds-chart/zwds-chart"
+  }
+}
+
