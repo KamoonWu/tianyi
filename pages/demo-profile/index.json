@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "zwds-chart": "/components/zwds-chart/zwds-chart"
+  },
+  "navigationBarTitleText": "紫微斗数命盘示例"
+}

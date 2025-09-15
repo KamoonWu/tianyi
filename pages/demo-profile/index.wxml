@@ -1,0 +1,107 @@
+<!-- pages/demo-profile/index.wxml -->
+<view class="container">
+  <view class="header">
+    <text class="title">紫微斗数命盘示例</text>
+    <text class="subtitle">阳历 1991年1月22日凌晨4点在太原市出生的 男性</text>
+  </view>
+  
+  <view class="loading" wx:if="{{loading}}">
+    <text>计算中...</text>
+  </view>
+  
+  <view class="error" wx:elif="{{error}}">
+    <text>{{error}}</text>
+  </view>
+  
+  <view class="chart-container" wx:elif="{{chartData}}">
+    <!-- 个人信息展示 -->
+    <view class="info-card">
+      <view class="card-title">个人信息</view>
+      <view class="info-row">
+        <text class="info-label">姓名:</text>
+        <text class="info-value">{{chartData.center.name || '示例用户'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">性别:</text>
+        <text class="info-value">{{chartData.center.gender === 'male' ? '男' : '女'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">阳历:</text>
+        <text class="info-value">{{chartData.center.date || '1991-01-22'}} {{chartData.center.time || '4:00'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">农历:</text>
+        <text class="info-value">{{chartData.center.lunarDate || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">真太阳时:</text>
+        <text class="info-value">{{chartData.center.solarTime || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">时辰:</text>
+        <text class="info-value">{{chartData.center.time || '-'}}</text>
+      </view>
+    </view>
+    
+    <!-- 八字信息 -->
+    <view class="info-card">
+      <view class="card-title">八字信息</view>
+      <view class="info-row">
+        <text class="info-label">年柱:</text>
+        <text class="info-value">{{chartData.center.fourPillars.year || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">月柱:</text>
+        <text class="info-value">{{chartData.center.fourPillars.month || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">日柱:</text>
+        <text class="info-value">{{chartData.center.fourPillars.day || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">时柱:</text>
+        <text class="info-value">{{chartData.center.fourPillars.hour || '-'}}</text>
+      </view>
+    </view>
+    
+    <!-- 命盘信息 -->
+    <view class="info-card">
+      <view class="card-title">命盘信息</view>
+      <view class="info-row">
+        <text class="info-label">五行局:</text>
+        <text class="info-value">{{chartData.center.wuxingju || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">命主:</text>
+        <text class="info-value">{{chartData.center.lord || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">身主:</text>
+        <text class="info-value">{{chartData.center.bodyLord || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">子斗:</text>
+        <text class="info-value">{{chartData.center.ziDou || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">命宫:</text>
+        <text class="info-value">{{chartData.center.mingGong || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">身宫:</text>
+        <text class="info-value">{{chartData.center.shenGong || '-'}}</text>
+      </view>
+    </view>
+    
+    <!-- 星盘展示 -->
+    <view class="chart-view">
+      <zwds-chart 
+        id="chart"
+        palaces="{{chartData.palaces}}" 
+        center="{{chartData.center}}" 
+        flowYear="{{chartData.horoscope}}" 
+        showLines="{{true}}"
+      />
+    </view>
+  </view>
+</view>
