@@ -1,21 +1,4 @@
-<view class="page-container">
-  <view class="chart-section">
-    <view class="chart-controls">
-      <button class="btn btn-outline" size="mini" bindtap="goSettings">设置</button>
-      <button class="btn btn-secondary" size="mini" bindtap="showProfileSelector">命例</button>
-      <button class="btn btn-primary" size="mini" bindtap="testChart">测试</button>
-    </view>
-    <zwds-chart 
-      id="zwds-chart"
-      palaces="{{chart.palaces}}"
-      center="{{chart.center}}"
-      flowYear="{{flowYear}}"
-      bind:palaceClick="onPalaceClick">
-    </zwds-chart>
-  </view>
-</view>
-
-<!-- 底部弹出的命例选择器 - 移到页面容器外层 -->
+<!-- 底部弹出的命例选择器 - 放在最顶层 -->
 <view class="profile-selector-overlay {{showSelector ? 'show' : ''}}" catchtap="hideProfileSelector"></view>
 <view class="profile-selector-bottom {{showSelector ? 'show' : ''}}">
   <view class="selector-header">
@@ -36,5 +19,22 @@
       <view class="profile-check" wx:if="{{currentProfileIndex === index}}">✓</view>
     </view>
   </scroll-view>
+</view>
+
+<view class="page-container">
+  <view class="chart-section">
+    <view class="chart-controls">
+      <button class="btn btn-outline" size="mini" bindtap="goSettings">设置</button>
+      <button class="btn btn-secondary" size="mini" bindtap="showProfileSelector">命例</button>
+      <button class="btn btn-primary" size="mini" bindtap="testChart">测试</button>
+    </view>
+    <zwds-chart 
+      id="zwds-chart"
+      palaces="{{chart.palaces}}"
+      center="{{chart.center}}"
+      flowYear="{{flowYear}}"
+      bind:palaceClick="onPalaceClick">
+    </zwds-chart>
+  </view>
 </view>
 
