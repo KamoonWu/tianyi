@@ -17,19 +17,19 @@ page {
   z-index: auto;
 }
 
-/* 专门处理Canvas原生组件的层级问题 - 强制设置最低层级 */
+/* 专门处理Canvas原生组件的层级问题 */
 canvas {
-  z-index: -999999 !important;
+  z-index: 1 !important;
   position: relative !important;
 }
 
-/* 强制设置所有Canvas元素为最低层级 */
+/* 强制设置所有Canvas元素层级 */
 .zwds-chart canvas {
-  z-index: -999999 !important;
+  z-index: 1 !important;
   position: relative !important;
 }
 
-/* 排盘区域样式 - 降低层级 */
+/* 排盘区域样式 */
 .chart-section {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 0px;
@@ -133,149 +133,4 @@ canvas {
   font-size: 8px;
   color: #1e293b;
   line-height: 1;
-}
-
-/* 底部弹出命例选择器样式 - 超高层级版本 */
-.profile-selector-overlay {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  background: rgba(0, 0, 0, 0.5) !important;
-  z-index: 99999999 !important;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-.profile-selector-overlay.show {
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-.profile-selector-bottom {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100vw !important;
-  background: white !important;
-  border-radius: 20px 20px 0 0;
-  z-index: 100000000 !important;
-  max-height: 60vh;
-  transform: translateY(100%);
-  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
-}
-
-.profile-selector-bottom.show {
-  transform: translateY(0) !important;
-}
-
-/* 针对微信小程序Canvas的特殊处理 */
-.profile-selector-overlay,
-.profile-selector-bottom {
-  -webkit-transform: translateZ(0) !important;
-  transform: translateZ(0) !important;
-  will-change: transform !important;
-}
-
-.selector-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid #f1f5f9;
-  position: relative;
-}
-
-.selector-header::before {
-  content: '';
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 36px;
-  height: 4px;
-  background: #e2e8f0;
-  border-radius: 2px;
-}
-
-.selector-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0;
-}
-
-.selector-close {
-  font-size: 24px;
-  color: #64748b;
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.2s ease;
-}
-
-.selector-close:hover {
-  background: #f1f5f9;
-}
-
-.profile-list {
-  max-height: 40vh;
-  padding: 8px 0 20px;
-}
-
-.profile-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid #f8fafc;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.profile-item:hover {
-  background: #f8fafc;
-}
-
-.profile-item.active {
-  background: rgba(59, 130, 246, 0.05);
-}
-
-.profile-item:last-child {
-  border-bottom: none;
-}
-
-.profile-main {
-  flex: 1;
-}
-
-.profile-name {
-  font-size: 16px;
-  font-weight: 500;
-  color: #1e293b;
-  margin-bottom: 4px;
-}
-
-.profile-desc {
-  font-size: 14px;
-  color: #64748b;
-  line-height: 1.4;
-}
-
-.profile-check {
-  font-size: 18px;
-  color: #3b82f6;
-  font-weight: bold;
-  width: 24px;
-  text-align: center;
 }

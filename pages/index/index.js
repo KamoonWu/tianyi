@@ -335,16 +335,57 @@ Page({
     return mockGods[palaceIndex] || [];
   },
 
-  // 显示命例选择器
+  // 显示命例选择器 - 使用原生ActionSheet
   showProfileSelector() {
     console.log('📋 显示命例选择器');
-    this.setData({
-      showSelector: true
-      // 不再隐藏图表，让选择器覆盖在排盘上方
+    
+    const app = getApp();
+    const profiles = app.getAllProfiles();
+    
+    // 构建ActionSheet的选项数组
+    const itemList = profiles.map(profile => {
+      const currentIndex = this.data.currentProfileIndex;
+      const isActive = profiles[currentIndex] && profiles[currentIndex].id === profile.id;
+      return `${isActive ? '✓ ' : ''}${profile.name}`;
+    });
+    
+    wx.showActionSheet({
+      itemList: itemList,
+      success: (res) => {
+        console.log('🎯 用户选择了命例:', res.tapIndex);
+        this.selectProfileByIndex(res.tapIndex);
+      },
+      fail: (res) => {
+        console.log('❌ 用户取消选择:', res);
+      }
     });
   },
 
-  // 隐藏命例选择器
+  // 根据索引选择命例
+  selectProfileByIndex(index) {
+    const app = getApp();
+    const profiles = app.getAllProfiles();
+    
+    if (index >= 0 && index < profiles.length) {
+      const selectedProfile = app.switchProfile(index);
+      
+      console.log('🔄 切换命例:', selectedProfile.name);
+      
+      this.setData({
+        currentProfileIndex: index
+      });
+      
+      // 重新加载排盘数据
+      this.loadCurrentProfile();
+      
+      wx.showToast({
+        title: `已切换到${selectedProfile.name}`,
+        icon: 'success'
+      });
+    }
+  },
+
+  // 隐藏命例选择器（保留方法，但不再使用）
   hideProfileSelector() {
     console.log('📋 隐藏命例选择器');
     this.setData({
@@ -352,7 +393,7 @@ Page({
     });
   },
 
-  // 选择命例
+  // 选择命例（保留方法，但不再使用）
   selectProfile(e) {
     const index = e.currentTarget.dataset.index;
     const app = getApp();
