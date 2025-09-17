@@ -223,10 +223,7 @@ Page({
     });
   },
 
-  // 阻止事件冒泡
-  stopPropagation() {
-    // 空函数，用于阻止事件冒泡
-  },
+
 
   // 选择命例
   selectProfile(e) {

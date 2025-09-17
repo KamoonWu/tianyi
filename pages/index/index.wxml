@@ -14,25 +14,27 @@
     </zwds-chart>
   </view>
 
-  <!-- 命例选择弹窗 -->
-  <view class="profile-selector {{showSelector ? 'show' : ''}}" catchtap="hideProfileSelector">
-    <view class="selector-content" catchtap="stopPropagation">
+  <!-- 底部弹出的命例选择器 -->
+  <view class="profile-selector-overlay {{showSelector ? 'show' : ''}}" catchtap="hideProfileSelector"></view>
+  <view class="profile-selector-bottom {{showSelector ? 'show' : ''}}">
+    <view class="selector-header">
       <view class="selector-title">选择命例</view>
-      <view class="profile-list">
-        <view 
-          wx:for="{{profiles}}" 
-          wx:key="id" 
-          class="profile-item {{currentProfileIndex === index ? 'active' : ''}}"
-          data-index="{{index}}"
-          bindtap="selectProfile">
+      <view class="selector-close" catchtap="hideProfileSelector">×</view>
+    </view>
+    <scroll-view class="profile-list" scroll-y="true">
+      <view 
+        wx:for="{{profiles}}" 
+        wx:key="id" 
+        class="profile-item {{currentProfileIndex === index ? 'active' : ''}}"
+        data-index="{{index}}"
+        bindtap="selectProfile">
+        <view class="profile-main">
           <view class="profile-name">{{item.name}}</view>
           <view class="profile-desc">{{item.description}}</view>
         </view>
+        <view class="profile-check" wx:if="{{currentProfileIndex === index}}">✓</view>
       </view>
-      <view class="selector-footer">
-        <button class="btn btn-outline" size="mini" bindtap="hideProfileSelector">取消</button>
-      </view>
-    </view>
+    </scroll-view>
   </view>
 </view>
 
