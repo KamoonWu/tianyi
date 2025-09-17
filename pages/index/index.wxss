@@ -8,6 +8,7 @@
   padding-bottom: env(safe-area-inset-bottom);
   position: relative;
   z-index: 0;
+  isolation: isolate;
 }
 
 /* 响应式调整 */
@@ -29,7 +30,7 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   height: calc(100vh - 100px);
   position: relative;
-  z-index: auto;
+  z-index: 1;
 }
 
 /* 控制按钮区域 */
@@ -129,10 +130,10 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 999998;
+  z-index: 9999998;
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
@@ -147,10 +148,10 @@
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 100%;
+  width: 100vw;
   background: white;
   border-radius: 20px 20px 0 0;
-  z-index: 999999;
+  z-index: 9999999;
   max-height: 60vh;
   transform: translateY(100%);
   transition: transform 0.3s ease;
