@@ -8,11 +8,9 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  z-index: -1;
 }
 
 .zwds-chart canvas {
   position: relative;
-  z-index: -1;
 }
 

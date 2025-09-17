@@ -125,7 +125,7 @@
   line-height: 1;
 }
 
-/* 底部弹出命例选择器样式 - 使用极高层级 */
+/* 底部弹出命例选择器样式 */
 .profile-selector-overlay {
   position: fixed;
   top: 0;
@@ -133,7 +133,7 @@
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 9999998;
+  z-index: 1000;
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
@@ -151,7 +151,7 @@
   width: 100vw;
   background: white;
   border-radius: 20px 20px 0 0;
-  z-index: 9999999;
+  z-index: 1001;
   max-height: 60vh;
   transform: translateY(100%);
   transition: transform 0.3s ease;
