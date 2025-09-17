@@ -5,12 +5,14 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 0;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* 响应式调整 */
 @media (max-width: 750rpx) {
   .page-container {
     padding: 16rpx;
+    padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   }
 }
 
@@ -23,7 +25,9 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  height: 100vh;
+  height: calc(100vh - 100px);
+  position: relative;
+  z-index: 1;
 }
 
 /* 控制按钮区域 */
@@ -33,6 +37,8 @@
   gap: 8px;
   padding: 8px 16px;
   margin-bottom: 8px;
+  position: relative;
+  z-index: 10;
 }
 
 /* 中宫信息区域样式 */
@@ -124,7 +130,7 @@
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  z-index: 9998;
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
@@ -142,7 +148,7 @@
   width: 100%;
   background: white;
   border-radius: 20px 20px 0 0;
-  z-index: 1001;
+  z-index: 9999;
   max-height: 60vh;
   transform: translateY(100%);
   transition: transform 0.3s ease;

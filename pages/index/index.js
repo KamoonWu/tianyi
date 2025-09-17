@@ -93,20 +93,140 @@ Page({
     };
   },
 
-  // 生成模拟宫位数据
+  // 生成模拟宫位数据（实际应从后端API获取）
   generateMockPalaces(profile) {
-    const palaceNames = [
+    // 这里应该调用后端API获取宫位数据
+    // 目前使用模拟数据展示数据结构
+    
+    if (profile.id === 'empty') {
+      // 空命例：显示标准宫位结构但无具体数据
+      return this.generateEmptyPalacesWithStructure();
+    }
+    
+    // 有效命例：从后端获取完整的宫位数据（目前模拟）
+    return this.generateMockPalacesWithData(profile);
+  },
+
+  // 生成有数据的宫位（模拟后端返回的数据结构）
+  generateMockPalacesWithData(profile) {
+    // 这个函数应该被后端API调用替代
+    // 宫位顺序和名称应该由后端根据排盘逻辑确定
+    const mockPalaceData = [
+      {
+        name: '命宫',
+        index: 0,
+        branch: '寅',
+        heavenlyStem: '甲',
+        stars: this.generateMockStars(0),
+        gods: this.generateMockGods(0) // 神煞数据
+      },
+      {
+        name: '兄弟宫',
+        index: 1,
+        branch: '卯',
+        heavenlyStem: '乙',
+        stars: this.generateMockStars(1),
+        gods: this.generateMockGods(1)
+      },
+      {
+        name: '夫妻宫',
+        index: 2,
+        branch: '辰',
+        heavenlyStem: '丙',
+        stars: this.generateMockStars(2),
+        gods: this.generateMockGods(2)
+      },
+      {
+        name: '子女宫',
+        index: 3,
+        branch: '巳',
+        heavenlyStem: '丁',
+        stars: this.generateMockStars(3),
+        gods: this.generateMockGods(3)
+      },
+      {
+        name: '财帛宫',
+        index: 4,
+        branch: '午',
+        heavenlyStem: '戊',
+        stars: this.generateMockStars(4),
+        gods: this.generateMockGods(4)
+      },
+      {
+        name: '疾厄宫',
+        index: 5,
+        branch: '未',
+        heavenlyStem: '己',
+        stars: this.generateMockStars(5),
+        gods: this.generateMockGods(5)
+      },
+      {
+        name: '迁移宫',
+        index: 6,
+        branch: '申',
+        heavenlyStem: '庚',
+        stars: this.generateMockStars(6),
+        gods: this.generateMockGods(6)
+      },
+      {
+        name: '奴仆宫',
+        index: 7,
+        branch: '酉',
+        heavenlyStem: '辛',
+        stars: this.generateMockStars(7),
+        gods: this.generateMockGods(7)
+      },
+      {
+        name: '官禄宫',
+        index: 8,
+        branch: '戌',
+        heavenlyStem: '壬',
+        stars: this.generateMockStars(8),
+        gods: this.generateMockGods(8)
+      },
+      {
+        name: '田宅宫',
+        index: 9,
+        branch: '亥',
+        heavenlyStem: '癸',
+        stars: this.generateMockStars(9),
+        gods: this.generateMockGods(9)
+      },
+      {
+        name: '福德宫',
+        index: 10,
+        branch: '子',
+        heavenlyStem: '甲',
+        stars: this.generateMockStars(10),
+        gods: this.generateMockGods(10)
+      },
+      {
+        name: '父母宫',
+        index: 11,
+        branch: '丑',
+        heavenlyStem: '乙',
+        stars: this.generateMockStars(11),
+        gods: this.generateMockGods(11)
+      }
+    ];
+    
+    return mockPalaceData;
+  },
+
+  // 生成空白宫位结构（用于空命例）
+  generateEmptyPalacesWithStructure() {
+    const standardPalaceNames = [
       '命宫', '兄弟宫', '夫妻宫', '子女宫', '财帛宫', '疾厄宫',
       '迁移宫', '奴仆宫', '官禄宫', '田宅宫', '福德宫', '父母宫'
     ];
     
-    return palaceNames.map((name, index) => ({
+    return standardPalaceNames.map((name, index) => ({
       name: name,
       index: index,
-      branch: ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'][index],
-      heavenlyStem: ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'][index % 10],
-      stars: this.generateMockStars(index),
-      // 不再包含测试字段
+      branch: '—',
+      heavenlyStem: '—',
+      stars: [],
+      gods: [] // 空的神煞数据
     }));
   },
 
@@ -165,7 +285,7 @@ Page({
     
     this.setData({
       chart: {
-        palaces: this.generateEmptyPalaces(),
+        palaces: this.generateEmptyPalacesWithStructure(),
         center: {
           name: '—',
           gender: '—',
@@ -191,20 +311,28 @@ Page({
     });
   },
 
-  // 生成空白宫位数据
-  generateEmptyPalaces() {
-    const palaceNames = [
-      '命宫', '兄弟宫', '夫妻宫', '子女宫', '财帛宫', '疾厄宫',
-      '迁移宫', '奴仆宫', '官禄宫', '田宅宫', '福德宫', '父母宫'
+  // 生成空白宫位数据（已合并到generateEmptyPalacesWithStructure）
+
+  // 生成模拟神煞数据（应该从后端获取）
+  generateMockGods(palaceIndex) {
+    // 这里应该调用后端API获取神煞数据
+    // 不同宫位的神煞应该根据排盘逻辑计算
+    const mockGods = [
+      ['岁建', '青龙', '博士'],
+      ['晦气', '丧门', '力士'],
+      ['龙德', '白虎', '青龙'],
+      ['紫微', '天德', '月德'],
+      ['天喜', '红鸾', '天姚'],
+      ['孤辰', '寡宿', '蜚廉'],
+      ['破碎', '华盖', '咸池'],
+      ['天空', '劫煞', '灾煞'],
+      ['天刑', '指背', '咸池'],
+      ['月煞', '亡神', '天德'],
+      ['解神', '天喜', '红鸾'],
+      ['天马', '驿马', '华盖']
     ];
     
-    return palaceNames.map((name, index) => ({
-      name: name,
-      index: index,
-      branch: '—',
-      heavenlyStem: '—',
-      stars: []
-    }));
+    return mockGods[palaceIndex] || [];
   },
 
   // 显示命例选择器

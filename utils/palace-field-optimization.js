@@ -362,11 +362,7 @@ function getPalaceFieldData(palace, flowYearData = null) {
     heavenlyStemBranch: palace.heavenlyStem && palace.branch ? 
       `${palace.heavenlyStem}${palace.branch}` : (palace.branch || ''),
     palaceName: palace.name ? palace.name.replace('宫', '') : '',
-    leftBottomGods: {
-      suiQian: suiQianArr,
-      jiangQian: jiangQianArr,
-      boShi: boShiArr
-    },
+    leftBottomGods: palace.gods ? palace.gods.map(god => ({ name: god })) : [],
     fourHuaFlags, // 宫级四化
     divineStars: categorized.divine,
     starBrightness: categorized.brightness
