@@ -1,7 +1,7 @@
 <canvas 
   type="2d" 
   id="zwdsCanvas" 
-  style="width: 370px; height: 464px; background: transparent; border-radius: 12rpx;" 
+  style="width: 370px; height: 464px; background: transparent; border-radius: 12rpx; z-index: -1;" 
   canvas-id="zwdsCanvas" 
   bindtap="onTap">
 </canvas>

@@ -17,6 +17,17 @@ page {
   z-index: auto;
 }
 
+/* 专门处理Canvas原生组件的层级问题 */
+canvas {
+  z-index: -1 !important;
+}
+
+/* 强制设置所有Canvas元素为最低层级 */
+.zwds-chart canvas {
+  z-index: -1 !important;
+  position: relative !important;
+}
+
 /* 响应式调整 */
 @media (max-width: 750rpx) {
   .page-container {
@@ -168,7 +179,15 @@ page {
 }
 
 .profile-selector-bottom.show {
-  transform: translateY(0);
+  transform: translateY(0) !important;
+}
+
+/* 针对微信小程序Canvas的特殊处理 */
+.profile-selector-overlay,
+.profile-selector-bottom {
+  -webkit-transform: translateZ(0) !important;
+  transform: translateZ(0) !important;
+  will-change: transform !important;
 }
 
 .selector-header {
