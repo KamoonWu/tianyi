@@ -12,7 +12,6 @@ Page({
     profiles: [],
     currentProfileIndex: 0,
     showSelector: false,
-    hideChart: false,  // 新增：控制图表显示/隐藏
     // 添加流年数据
     flowYear: {
       currentFlowYear: {
@@ -340,8 +339,8 @@ Page({
   showProfileSelector() {
     console.log('📋 显示命例选择器');
     this.setData({
-      showSelector: true,
-      hideChart: true  // 隐藏图表避免Canvas层级问题
+      showSelector: true
+      // 不再隐藏图表，让选择器覆盖在排盘上方
     });
   },
 
@@ -349,8 +348,7 @@ Page({
   hideProfileSelector() {
     console.log('📋 隐藏命例选择器');
     this.setData({
-      showSelector: false,
-      hideChart: false  // 恢复图表显示
+      showSelector: false
     });
   },
 
@@ -364,8 +362,7 @@ Page({
     
     this.setData({
       currentProfileIndex: index,
-      showSelector: false,
-      hideChart: false  // 恢复图表显示
+      showSelector: false
     });
     
     // 重新加载排盘数据
