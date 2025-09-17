@@ -46,17 +46,6 @@ Component({
           this.drawChart();
         }
       }
-    },
-    showLines: {
-      type: Boolean,
-      value: true,
-      observer: function(newVal, oldVal) {
-        console.log('🔍 showLines属性观察者触发');
-        console.log('🔍 旧值:', oldVal);
-        console.log('🔍 新值:', newVal);
-        console.log('🔍 数据类型:', typeof newVal);
-        this.drawChart();
-      }
     }
   },
 
@@ -67,7 +56,7 @@ Component({
 
   lifetimes: {
     attached() {
-      console.log('排盘组件已挂载，初始showLines状态:', this.data.showLines);
+      console.log('排盘组件已挂载');
       this.drawChart();
     }
   },
@@ -177,7 +166,7 @@ Component({
           return { name: '', stars: '', isEmpty: true };
         } else {
           const palace = byName[k];
-          if (palace) {
+        if (palace) {
             console.log(`找到宫位 ${k}:`, palace);
             return palace;
           } else {
@@ -196,16 +185,7 @@ Component({
       console.log('🎨 当前组件数据:', {
         palaces: this.data.palaces,
         center: this.data.center,
-        fortune: this.data.fortune,
-        showLines: this.data.showLines
-      });
-      console.log('🎨 showLines详细检查:', {
-        value: this.data.showLines,
-        type: typeof this.data.showLines,
-        isTrue: this.data.showLines === true,
-        isFalse: this.data.showLines === false,
-        isUndefined: this.data.showLines === undefined,
-        isNull: this.data.showLines === null
+        fortune: this.data.fortune
       });
       
       const query = this.createSelectorQuery();
@@ -375,7 +355,7 @@ Component({
                     
                     let pillarX = contentX + 8;
                     center.nonSolarTermPillars.forEach((pillar) => {
-                      ctx.fillStyle = '#1e293b';
+                    ctx.fillStyle = '#1e293b';
                       ctx.fillText(pillar.heavenlyStem || '—', pillarX, currentY);
                       ctx.fillText(pillar.earthlyBranch || '—', pillarX, currentY + 10);
                       pillarX += 20;
@@ -489,7 +469,7 @@ Component({
                   ctx.font = `${fontSmall}px sans-serif`;
                   ctx.textAlign = 'right';
                   ctx.fillText(groups.fourHua.join(' '), x + w - 8, y + 16); // 调整位置，确保在线框内
-                  ctx.textAlign = 'left';
+        ctx.textAlign = 'left';
                 }
                 
                 // 其他星曜（左侧显示）
@@ -628,148 +608,12 @@ Component({
           }
         }
 
-        // 绘制六条线标题（简化，避免文字重叠）
-        const { SIX_LINES, getPalaceIndex } = require('../../utils/palace-lines');
-        
-        // 根据开关控制是否显示连线
-        console.log('🔗 连线绘制检查开始');
-        console.log('🔗 showLines状态:', this.properties.showLines);
-        console.log('🔗 showLines数据类型:', typeof this.properties.showLines);
-        console.log('🔗 showLines数据值:', this.properties.showLines);
-        console.log('🔗 showLines === true:', this.properties.showLines === true);
-        console.log('🔗 showLines === false:', this.properties.showLines === false);
-        console.log('🔗 showLines == true:', this.properties.showLines == true);
-        console.log('🔗 showLines == false:', this.properties.showLines == false);
-        
-        if (this.properties.showLines) {
-          console.log('✅ 连线开关为true，开始绘制连线');
-        ctx.font = `${fontSmall}px sans-serif`;
-        ctx.textAlign = 'center';
-          
-          // 绘制所有六条线
-          const allLines = Object.keys(SIX_LINES);
-          console.log('🔗 可用的连线:', allLines);
-          
-          for (const key of allLines) {
-          const line = SIX_LINES[key];
-          if (!line) continue;
-            
-          const idx1 = getPalaceIndex(line.palaces[0]);
-          const idx2 = getPalaceIndex(line.palaces[1]);
-            
-            console.log(`🔗 连线 ${key}:`, {
-              palace1: line.palaces[0],
-              palace2: line.palaces[1],
-              idx1,
-              idx2,
-              valid: idx1 >= 0 && idx2 >= 0,
-              cell1: this._cells[idx1],
-              cell2: this._cells[idx2]
-            });
-            
-          if (idx1 >= 0 && idx2 >= 0) {
-            const c1 = this._cells[idx1];
-            const c2 = this._cells[idx2];
-              
-              if (c1 && c2 && !c1.skip && !c2.skip) {
-                console.log(`✅ 绘制连线 ${key}:`, {
-                  from: line.palaces[0],
-                  to: line.palaces[1],
-                  cell1: { x: c1.x, y: c1.y, w: c1.w, h: c1.h, skip: c1.skip },
-                  cell2: { x: c2.x, y: c2.y, w: c2.w, h: c2.h, skip: c2.skip }
-                });
-                
-                // 计算连线起点和终点（通用处理，不需要特殊条件判断）
-                const startX = c1.x + c1.w / 2;
-                const startY = c1.y + c1.h / 2;
-                const endX = c2.x + c2.w / 2;
-                const endY = c2.y + c2.h / 2;
-                
-                // 绘制连线
-                ctx.strokeStyle = line.color;
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(startX, startY);
-                ctx.lineTo(endX, endY);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                
-                console.log(`✅ 连线 ${key} 绘制完成:`, {
-                  start: `(${startX.toFixed(1)}, ${startY.toFixed(1)})`,
-                  end: `(${endX.toFixed(1)}, ${endY.toFixed(1)})`,
-                  color: line.color
-                });
-                
-                // 绘制线标题（在连线中点）
-                const midX = (startX + endX) / 2;
-                const midY = (startY + endY) / 2;
-                
-                // 检查是否在中宫区域内，如果是则调整位置
-                const centerCell = this._cells.find(c => c.isCenter && !c.skip);
-                if (centerCell && midX >= centerCell.x && midX <= centerCell.x + centerCell.w && 
-                    midY >= centerCell.y && midY <= centerCell.y + centerCell.h) {
-                  // 在中宫区域内，调整标签位置
-                  const offset = 20;
-                  if (startY < endY) {
-                    // 从上到下的连线
-                    ctx.fillText(line.alias, midX, midY - offset);
-                  } else {
-                    // 从下到上的连线
-                    ctx.fillText(line.alias, midX, midY + offset);
-                  }
-                } else {
-                  // 不在中宫区域，正常显示
-              ctx.fillText(line.alias, midX, midY - 8);
-            }
-                
-                console.log(`✅ 连线标签 ${key} 绘制完成:`, {
-                  alias: line.alias,
-                  position: `(${midX.toFixed(1)}, ${midY.toFixed(1)})`
-                });
-              } else {
-                console.log(`❌ 跳过连线 ${key}:`, {
-                  cell1: c1 ? { skip: c1.skip } : 'null',
-                  cell2: c2 ? { skip: c2.skip } : 'null'
-                });
-              }
-            } else {
-              console.log(`❌ 连线 ${key} 宫位索引无效:`, { idx1, idx2 });
-          }
-        }
-        ctx.textAlign = 'left';
-        } else {
-          console.log('❌ 连线开关为false，跳过连线绘制');
-        }
+        // 连线功能已移除
 
-        // 运限盘叠加（简化：标记当前运限宫位）
-        const fortune = this.data.fortune || {};
-        if (fortune.currentPalace) {
-          const fortuneIdx = getPalaceIndex(fortune.currentPalace);
-          if (fortuneIdx >= 0) {
-            const cell = this._cells[fortuneIdx];
-            if (cell && !cell.skip) {
-              // 运限宫位背景高亮
-              ctx.fillStyle = 'rgba(251, 191, 36, 0.2)';
-              ctx.fillRect(cell.x + 2, cell.y + 2, cell.w - 4, cell.h - 4);
-              
-              // 运限宫位边框
-              ctx.strokeStyle = '#fbbf24';
-              ctx.lineWidth = 2;
-              ctx.strokeRect(cell.x + 2, cell.y + 2, cell.w - 4, cell.h - 4);
-              
-              // 运限标记文字
-              ctx.fillStyle = '#d97706';
-              ctx.font = `${fontSmall}px sans-serif`;
-              ctx.textAlign = 'center';
-              ctx.fillText('运限', cell.x + cell.w / 2, cell.y + cell.h - 8);
-              ctx.textAlign = 'left';
-            }
-          }
-        }
+        // 运限盘功能已移除
 
         // 三方四正连线（根据选中宫位绘制）
-        const { getSanFangSiZheng } = require('../../utils/palace-lines');
+        const { getSanFangSiZheng, getPalaceIndex } = require('../../utils/palace-lines');
         const selectedPalace = this.data.selectedPalace;
         if (selectedPalace) {
           const targetIdx = getPalaceIndex(selectedPalace);

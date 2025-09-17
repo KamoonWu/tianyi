@@ -4,7 +4,6 @@ const api = require('../../utils/zwds-api');
 
 Page({
   data: {
-    showLines: false,
     chart: {
       palaces: [],
       center: {
@@ -32,9 +31,6 @@ Page({
     },
     profile: null,
     center: null,
-    fortune: null,
-    patterns: [],
-    checks: [],
     // 添加流年数据
     flowYear: {
       currentFlowYear: {
@@ -234,34 +230,6 @@ Page({
     wx.navigateTo({ url: '/pages/settings/settings' });
   },
 
-  switchRange(e) {
-    const range = e.currentTarget.dataset.range;
-    const profile = this.data.activeProfile;
-    const fortunes = buildFortunes(profile, range);
-    this.setData({ fortunes });
-  },
-
-  runDiagnostics() {
-    // 示例：对命宫/紫微等进行判断，展示接口用法
-    const palace = '命宫';
-    const star = '紫微';
-    const checks = {
-      palaceHasStars: api.palaceHasStars(palace, [star]),
-      sanFangHasStars: api.sanFangSiZhengHasStars(palace, [star]),
-      sanFangHasHua: api.sanFangSiZhengHasHua(palace, ['化禄','化权','化科','化忌']),
-      starHasHua: api.starHasHua(star),
-      starSanFangHasHua: api.starSanFangSiZhengHasHua(star),
-      starIsBright: api.starIsBrightness(star, '庙') || api.starIsBrightness(star, '旺'),
-      siHuaByJia: api.getSiHuaByTianGan('甲'),
-      starPalace: api.getPalaceOfStar(star)?.name || null,
-      starOpposite: api.getOppositePalaceOfStar(star) || null,
-      isPalaceEmpty: api.isPalaceEmpty(palace),
-      palaceFlyToSelf: api.palaceHasFlyingStarsTo(palace, palace),
-      palaceFourHuaTargets: api.getPalaceFourHuaTargets(palace)
-    };
-    this.setData({ checks });
-  },
-
   // 宫位点击事件
   onPalaceClick(e) {
     console.log('🎯 主页面收到宫位点击事件:', e.detail);
@@ -298,37 +266,6 @@ Page({
     // 不再自动清除高亮，让用户手动控制
     // 高亮会一直保持，直到用户点击其他宫位或手动清除
     console.log('🎯 三方四正高亮已激活，将一直保持');
-  },
-
-  // 切换连线显示
-  toggleLines() {
-    console.log('🔄 连线开关切换开始');
-    console.log('🔄 当前showLines状态:', this.data.showLines);
-    console.log('🔄 当前showLines类型:', typeof this.data.showLines);
-    
-    // 直接切换布尔值
-    const newValue = !this.data.showLines;
-    
-    console.log('🔄 新值:', newValue);
-    console.log('🔄 新值类型:', typeof newValue);
-    
-    this.setData({
-      showLines: newValue
-    });
-    
-    console.log('🔄 setData完成');
-    console.log('🔄 当前showLines状态:', this.data.showLines);
-    console.log('🔄 当前showLines类型:', typeof this.data.showLines);
-    
-    // 手动触发排盘组件重绘
-    console.log('🔄 手动触发排盘组件重绘');
-    const chartComponent = this.selectComponent('#zwds-chart');
-    if (chartComponent) {
-      console.log('🔄 找到排盘组件，调用drawChart');
-      chartComponent.drawChart();
-    } else {
-      console.log('❌ 未找到排盘组件');
-    }
   },
 
   // 测试排盘功能
