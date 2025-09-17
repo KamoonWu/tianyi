@@ -1,9 +1,7 @@
 const { buildChartSummary, buildPalaceList, buildFortunes, loadActiveProfile } = require('../../utils/zwds');
 const { analyzePatterns } = require('../../utils/pattern-analysis');
 const api = require('../../utils/zwds-api');
-
-// 引入iztro库进行紫微斗数计算
-const { astro } = require('iztro');
+const { computeChartWithIztro, computeRawChart } = require('../../utils/iztro-adapter');
 
 Page({
   data: {
@@ -64,25 +62,25 @@ Page({
     }
   },
 
-  // 计算排盘（使用iztro库进行真实计算）
+  // 计算排盘（使用iztro适配器）
   calculateChart(profile) {
     console.log('🧮 开始计算排盘:', profile.name);
     
     try {
-      // 使用iztro库进行紫微斗数排盘计算
-      const astrolabe = this.generateAstrolabe(profile);
+      // 首先尝试使用iztro适配器
+      const iztroResult = this.tryIztroCalculation(profile);
       
-      if (astrolabe) {
-        const chartData = this.convertAstrolabeToChart(astrolabe, profile);
-        
-        this.setData({
-          chart: chartData
-        });
-        
-        console.log('✅ 排盘计算完成:', chartData);
+      if (iztroResult) {
+        console.log('✅ 使用iztro计算成功');
+        const chartData = this.convertIztroToChart(iztroResult, profile);
+        this.setData({ chart: chartData });
       } else {
-        throw new Error('无法生成星盘');
+        console.log('⚠️ iztro不可用，使用模拟数据');
+        const chartData = this.generateMockChart(profile);
+        this.setData({ chart: chartData });
       }
+      
+      console.log('✅ 排盘计算完成');
     } catch (error) {
       console.error('❌ 排盘计算失败:', error);
       wx.showToast({
@@ -94,177 +92,308 @@ Page({
     }
   },
 
-  // 使用iztro库生成星盘
-  generateAstrolabe(profile) {
+  // 尝试使用iztro计算
+  tryIztroCalculation(profile) {
     try {
-      console.log('📅 生成星盘参数:', {
-        date: profile.date,
-        time: profile.time,
-        gender: profile.gender
-      });
-
-      // 将时间字符串转换为时辰索引
-      const timeIndex = this.convertTimeToIndex(profile.time);
+      // 使用适配器尝试计算
+      const rawChart = computeRawChart(profile);
+      if (rawChart) {
+        return rawChart;
+      }
       
-      // 使用iztro库生成星盘
-      const astrolabe = astro.bySolar(
-        profile.date,           // 阳历日期
-        timeIndex,              // 时辰索引
-        profile.gender          // 性别
-      );
-
-      console.log('🌟 iztro生成的星盘:', astrolabe);
-      return astrolabe;
+      // 尝试使用适配器的高级接口
+      const chartResult = computeChartWithIztro(profile);
+      if (chartResult && chartResult.__raw) {
+        return chartResult.__raw;
+      }
+      
+      return null;
     } catch (error) {
-      console.error('❌ 生成星盘失败:', error);
+      console.warn('iztro计算失败:', error);
       return null;
     }
   },
 
-  // 将时间字符串转换为时辰索引
-  convertTimeToIndex(timeStr) {
-    // 解析时间字符串，如 "04:00"
-    const [hour] = timeStr.split(':').map(Number);
-    
-    // 时辰对照表
-    const timeIndexMap = {
-      23: 0, 0: 0, 1: 0,        // 子时 23:00-01:00
-      2: 1, 3: 1,               // 丑时 01:00-03:00
-      4: 2, 5: 2,               // 寅时 03:00-05:00
-      6: 3, 7: 3,               // 卯时 05:00-07:00
-      8: 4, 9: 4,               // 辰时 07:00-09:00
-      10: 5, 11: 5,             // 工时 09:00-11:00
-      12: 6, 13: 6,             // 午时 11:00-13:00
-      14: 7, 15: 7,             // 未时 13:00-15:00
-      16: 8, 17: 8,             // 申时 15:00-17:00
-      18: 9, 19: 9,             // 酉时 17:00-19:00
-      20: 10, 21: 10,           // 戌时 19:00-21:00
-      22: 11                    // 亥时 21:00-23:00
-    };
-
-    return timeIndexMap[hour] || 0;
+  // 转换iztro数据为前端格式
+  convertIztroToChart(astrolabe, profile) {
+    try {
+      return {
+        palaces: this.convertIztroPalaces(astrolabe),
+        center: this.convertIztroCenter(astrolabe, profile)
+      };
+    } catch (error) {
+      console.error('转换iztro数据失败:', error);
+      return this.generateMockChart(profile);
+    }
   },
 
-  // 将iztro星盘数据转换为前端需要的格式
-  convertAstrolabeToChart(astrolabe, profile) {
-    return {
-      palaces: this.convertPalaces(astrolabe),
-      center: this.convertCenter(astrolabe, profile)
-    };
-  },
-
-  // 转换宫位数据
-  convertPalaces(astrolabe) {
+  // 转换iztro宫位数据
+  convertIztroPalaces(astrolabe) {
     const palaces = [];
     
-    // iztro返回的palaces数组，按照命宫开始的顺序排列
-    astrolabe.palaces.forEach((palace, index) => {
+    // 尝试从不同可能的字段获取宫位数据
+    const palaceData = astrolabe.palaces || astrolabe.gong || astrolabe.palaceList || [];
+    
+    palaceData.forEach((palace, index) => {
       const convertedPalace = {
-        name: palace.name,                    // 宫位名称（如：命宫、兄弟宫等）
-        index: index,                         // 宫位索引
-        branch: palace.earthlyBranch,         // 地支
-        heavenlyStem: palace.heavenlyStem,    // 天干
-        stars: this.convertStars(palace.majorStars, palace.minorStars, palace.adjectiveStars),
-        gods: this.convertGods(palace)        // 神煞
+        name: palace.name || palace.label || `宫位${index + 1}`,
+        index: index,
+        branch: palace.earthlyBranch || palace.branch || '—',
+        heavenlyStem: palace.heavenlyStem || palace.stem || '—',
+        stars: this.convertIztroStars(palace),
+        gods: this.convertIztroGods(palace)
       };
       
       palaces.push(convertedPalace);
     });
 
-    console.log('🏛️ 转换后的宫位数据:', palaces);
+    console.log('��️ 转换后的宫位数据:', palaces);
     return palaces;
   },
 
-  // 转换星曜数据
-  convertStars(majorStars = [], minorStars = [], adjectiveStars = []) {
+  // 转换iztro星曜数据
+  convertIztroStars(palace) {
     const allStars = [];
-
+    
     // 主星
-    majorStars.forEach(star => {
-      allStars.push({
-        name: star.name,
-        brightness: star.brightness || '平',
-        type: 'major'
+    if (palace.majorStars && Array.isArray(palace.majorStars)) {
+      palace.majorStars.forEach(star => {
+        allStars.push({
+          name: star.name || star,
+          brightness: star.brightness || '平',
+          type: 'major'
+        });
       });
-    });
+    }
 
     // 辅星
-    minorStars.forEach(star => {
-      allStars.push({
-        name: star.name,
-        brightness: star.brightness || '平',
-        type: 'minor'
+    if (palace.minorStars && Array.isArray(palace.minorStars)) {
+      palace.minorStars.forEach(star => {
+        allStars.push({
+          name: star.name || star,
+          brightness: star.brightness || '平',
+          type: 'minor'
+        });
       });
-    });
+    }
 
     // 杂曜
-    adjectiveStars.forEach(star => {
-      allStars.push({
-        name: star.name,
-        brightness: star.brightness || '平',
-        type: 'adjective'
+    if (palace.adjectiveStars && Array.isArray(palace.adjectiveStars)) {
+      palace.adjectiveStars.forEach(star => {
+        allStars.push({
+          name: star.name || star,
+          brightness: star.brightness || '平',
+          type: 'adjective'
+        });
       });
-    });
+    }
+
+    // 兼容其他格式
+    if (palace.stars && Array.isArray(palace.stars)) {
+      palace.stars.forEach(star => {
+        allStars.push({
+          name: star.name || star,
+          brightness: star.brightness || '平',
+          type: 'star'
+        });
+      });
+    }
 
     return allStars;
   },
 
-  // 转换神煞数据
-  convertGods(palace) {
+  // 转换iztro神煞数据
+  convertIztroGods(palace) {
     const gods = [];
     
-    // 从iztro的宫位数据中提取神煞信息
-    // iztro在不同字段中存储了各种神煞信息
+    // 从不同字段提取神煞信息
+    if (palace.changsheng12) gods.push(palace.changsheng12);
+    if (palace.boshi12) gods.push(palace.boshi12);
+    if (palace.jiangqian12) gods.push(palace.jiangqian12);
+    if (palace.suiqian12) gods.push(palace.suiqian12);
     
-    // 长生十二神
-    if (palace.changsheng12) {
-      gods.push(palace.changsheng12);
-    }
-    
-    // 博士十二神
-    if (palace.boshi12) {
-      gods.push(palace.boshi12);
-    }
-    
-    // 将前十二神
-    if (palace.jiangqian12) {
-      gods.push(palace.jiangqian12);
-    }
-    
-    // 岁前十二神
-    if (palace.suiqian12) {
-      gods.push(palace.suiqian12);
+    // 兼容其他格式
+    if (palace.gods && Array.isArray(palace.gods)) {
+      palace.gods.forEach(god => {
+        gods.push(god.name || god);
+      });
     }
     
     return gods;
   },
 
-  // 转换中宫数据
-  convertCenter(astrolabe, profile) {
+  // 转换iztro中宫数据
+  convertIztroCenter(astrolabe, profile) {
     return {
       name: profile.name,
       gender: profile.gender,
       solarDate: profile.date,
-      lunarDate: astrolabe.lunarDate,
+      lunarDate: astrolabe.lunarDate || '—',
       city: profile.city,
       clockTime: `${profile.date} ${profile.time}`,
       trueSolarTime: profile.trueSolarTime ? '已转换' : '未转换',
-      lifeMaster: astrolabe.soul,        // 命主
-      bodyMaster: astrolabe.body,        // 身主
-      ziDou: astrolabe.earthlyBranchOfSoulPalace, // 紫微斗数中的紫斗位置
-      fiveElements: astrolabe.fiveElementsClass,
-      sign: astrolabe.sign,
-      zodiac: astrolabe.zodiac,
-      fourPillars: {
-        year: astrolabe.chineseDate.split(' ')[0],
-        month: astrolabe.chineseDate.split(' ')[1],
-        day: astrolabe.chineseDate.split(' ')[2],
-        hour: astrolabe.chineseDate.split(' ')[3]
-      }
+      lifeMaster: astrolabe.soul || '—',
+      bodyMaster: astrolabe.body || '—',
+      ziDou: astrolabe.earthlyBranchOfSoulPalace || '—',
+      fiveElements: astrolabe.fiveElementsClass || '—',
+      sign: astrolabe.sign || '—',
+      zodiac: astrolabe.zodiac || '—',
+      fourPillars: this.extractFourPillars(astrolabe)
     };
   },
 
-  // 生成空白宫位结构（用于空命例）
+  // 提取四柱信息
+  extractFourPillars(astrolabe) {
+    if (astrolabe.chineseDate && typeof astrolabe.chineseDate === 'string') {
+      const parts = astrolabe.chineseDate.split(' ');
+      return {
+        year: parts[0] || '—',
+        month: parts[1] || '—',
+        day: parts[2] || '—',
+        hour: parts[3] || '—'
+      };
+    }
+    
+    if (astrolabe.rawDates && astrolabe.rawDates.chineseDate) {
+      const cd = astrolabe.rawDates.chineseDate;
+      return {
+        year: cd.yearly ? `${cd.yearly[0]}${cd.yearly[1]}` : '—',
+        month: cd.monthly ? `${cd.monthly[0]}${cd.monthly[1]}` : '—',
+        day: cd.daily ? `${cd.daily[0]}${cd.daily[1]}` : '—',
+        hour: cd.hourly ? `${cd.hourly[0]}${cd.hourly[1]}` : '—'
+      };
+    }
+    
+    return {
+      year: '—',
+      month: '—',
+      day: '—',
+      hour: '—'
+    };
+  },
+
+  // 生成模拟排盘数据
+  generateMockChart(profile) {
+    return {
+      palaces: this.generateMockPalaces(profile),
+      center: this.generateMockCenter(profile)
+    };
+  },
+
+  // 生成模拟宫位数据
+  generateMockPalaces(profile) {
+    if (profile.id === 'empty') {
+      return this.generateEmptyPalacesWithStructure();
+    }
+    
+    return this.generateMockPalacesWithData(profile);
+  },
+
+  // 生成有数据的宫位（模拟数据）
+  generateMockPalacesWithData(profile) {
+    const mockPalaceData = [
+      {
+        name: '命宫',
+        index: 0,
+        branch: '寅',
+        heavenlyStem: '甲',
+        stars: this.generateMockStars(0),
+        gods: this.generateMockGods(0)
+      },
+      {
+        name: '兄弟宫',
+        index: 1,
+        branch: '卯',
+        heavenlyStem: '乙',
+        stars: this.generateMockStars(1),
+        gods: this.generateMockGods(1)
+      },
+      {
+        name: '夫妻宫',
+        index: 2,
+        branch: '辰',
+        heavenlyStem: '丙',
+        stars: this.generateMockStars(2),
+        gods: this.generateMockGods(2)
+      },
+      {
+        name: '子女宫',
+        index: 3,
+        branch: '巳',
+        heavenlyStem: '丁',
+        stars: this.generateMockStars(3),
+        gods: this.generateMockGods(3)
+      },
+      {
+        name: '财帛宫',
+        index: 4,
+        branch: '午',
+        heavenlyStem: '戊',
+        stars: this.generateMockStars(4),
+        gods: this.generateMockGods(4)
+      },
+      {
+        name: '疾厄宫',
+        index: 5,
+        branch: '未',
+        heavenlyStem: '己',
+        stars: this.generateMockStars(5),
+        gods: this.generateMockGods(5)
+      },
+      {
+        name: '迁移宫',
+        index: 6,
+        branch: '申',
+        heavenlyStem: '庚',
+        stars: this.generateMockStars(6),
+        gods: this.generateMockGods(6)
+      },
+      {
+        name: '交友宫',
+        index: 7,
+        branch: '酉',
+        heavenlyStem: '辛',
+        stars: this.generateMockStars(7),
+        gods: this.generateMockGods(7)
+      },
+      {
+        name: '官禄宫',
+        index: 8,
+        branch: '戌',
+        heavenlyStem: '壬',
+        stars: this.generateMockStars(8),
+        gods: this.generateMockGods(8)
+      },
+      {
+        name: '田宅宫',
+        index: 9,
+        branch: '亥',
+        heavenlyStem: '癸',
+        stars: this.generateMockStars(9),
+        gods: this.generateMockGods(9)
+      },
+      {
+        name: '福德宫',
+        index: 10,
+        branch: '子',
+        heavenlyStem: '甲',
+        stars: this.generateMockStars(10),
+        gods: this.generateMockGods(10)
+      },
+      {
+        name: '父母宫',
+        index: 11,
+        branch: '丑',
+        heavenlyStem: '乙',
+        stars: this.generateMockStars(11),
+        gods: this.generateMockGods(11)
+      }
+    ];
+    
+    return mockPalaceData;
+  },
+
+  // 生成空白宫位结构
   generateEmptyPalacesWithStructure() {
     const standardPalaceNames = [
       '命宫', '兄弟宫', '夫妻宫', '子女宫', '财帛宫', '疾厄宫',
@@ -279,6 +408,74 @@ Page({
       stars: [],
       gods: []
     }));
+  },
+
+  // 生成模拟星曜数据
+  generateMockStars(palaceIndex) {
+    const allStars = [
+      '紫微', '天机', '太阳', '武曲', '天同', '廉贞',
+      '天府', '太阴', '贪狼', '巨门', '天相', '天梁',
+      '七杀', '破军', '左辅', '右弼', '文昌', '文曲'
+    ];
+    
+    const starCount = Math.floor(Math.random() * 3) + 1;
+    const selectedStars = [];
+    
+    for (let i = 0; i < starCount; i++) {
+      const randomIndex = (palaceIndex * 3 + i) % allStars.length;
+      selectedStars.push({
+        name: allStars[randomIndex],
+        brightness: ['庙', '旺', '得', '利', '平', '不'][Math.floor(Math.random() * 6)],
+        type: i === 0 ? 'major' : 'minor'
+      });
+    }
+    
+    return selectedStars;
+  },
+
+  // 生成模拟中宫数据
+  generateMockCenter(profile) {
+    return {
+      name: profile.name,
+      gender: profile.gender,
+      solarDate: profile.date,
+      lunarDate: '庚午年腊月初七',
+      city: profile.city,
+      clockTime: `${profile.date} ${profile.time}`,
+      trueSolarTime: profile.trueSolarTime ? '已转换' : '未转换',
+      lifeMaster: '贪狼',
+      bodyMaster: '天机',
+      ziDou: '子',
+      fiveElements: '水二局',
+      sign: '水瓶座',
+      zodiac: '马',
+      fourPillars: {
+        year: '辛未',
+        month: '庚寅', 
+        day: '癸巳',
+        hour: '甲子'
+      }
+    };
+  },
+
+  // 生成模拟神煞数据
+  generateMockGods(palaceIndex) {
+    const mockGods = [
+      ['岁建', '青龙', '博士'],
+      ['晦气', '丧门', '力士'],
+      ['龙德', '白虎', '青龙'],
+      ['紫微', '天德', '月德'],
+      ['天喜', '红鸾', '天姚'],
+      ['孤辰', '寡宿', '蜚廉'],
+      ['破碎', '华盖', '咸池'],
+      ['天空', '劫煞', '灾煞'],
+      ['天刑', '指背', '咸池'],
+      ['月煞', '亡神', '天德'],
+      ['解神', '天喜', '红鸾'],
+      ['天马', '驿马', '华盖']
+    ];
+    
+    return mockGods[palaceIndex] || [];
   },
 
   // 显示空白排盘

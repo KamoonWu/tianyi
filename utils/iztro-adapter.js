@@ -1,157 +1,190 @@
-// iztro 适配器
+// iztro 适配器 - 微信小程序版本
 // 参考：https://ziwei.pro/posts/astrolabe.html
 
 let iztro = null;
-try {
-  // 尝试导入 iztro
-  iztro = require('iztro');
-  
-  // 配置 iztro（参考：https://ziwei.pro/posts/config-n-plugin.html）
-  if (iztro && iztro.astro) {
-    // 自定义四化配置（可以根据不同流派调整）
-    iztro.astro.config({
-      mutagens: {
-        // 庚天干四化：太阳化禄、武曲化权、天同化科、天相化忌
-        庚: ['太阳', '武曲', '天同', '天相'],
-        // 可以添加其他天干的四化配置
-      },
-      brightness: {
-        // 贪狼星在所有宫位都显示为旺
-        贪狼: ['旺', '旺', '旺', '旺', '旺', '旺', '旺', '旺', '旺', '旺', '旺', '旺'],
-        // 可以添加其他星曜的亮度配置
-      },
-    });
-    
-    // 加载自定义插件
-    if (iztro.astro.loadPlugin) {
-      // 插件1：获取主要星曜
-      function majorStarPlugin() {
-        this.majorStar = function() {
-          let stars = this.palace('命宫')
-            ?.majorStars.filter((item) => item.type === 'major' && !['禄存', '天马'].includes(item.name))
-            .map((item) => item.name)
-            .join(',');
 
-          if (!stars) {
-            stars = this.palace('迁移')
-              ?.majorStars.filter((item) => item.type === 'major' && !['禄存', '天马'].includes(item.name))
-              .map((item) => item.name)
-              .join(',');
-          }
-
-          return stars ?? '';
-        };
-      }
-      
-      // 插件2：获取星曜组合信息
-      function starCombinationPlugin() {
-        this.getStarCombination = function() {
-          const combinations = [];
-          this.palaces.forEach((palace, index) => {
-            if (palace.majorStars && palace.majorStars.length > 0) {
-              const starNames = palace.majorStars.map(s => s.name).join('+');
-              combinations.push({
-                palace: palace.name,
-                stars: starNames,
-                index: index
-              });
-            }
-          });
-          return combinations;
-        };
-      }
-      
-      // 加载插件
-      try {
-        iztro.astro.loadPlugin(majorStarPlugin);
-        iztro.astro.loadPlugin(starCombinationPlugin);
-      } catch (e) {
-        console.warn('加载 iztro 插件失败:', e);
-      }
-    }
-  }
-} catch (e) {
-  console.warn('iztro 不可用，使用模拟数据');
-  iztro = null;
-}
-
-// 适配器：在小程序里优雅加载 iztro；失败时返回 null 让上层走占位逻辑
+// 尝试加载iztro库
 function tryLoadIztro() {
-  try {
-    // 微信小程序构建 npm 后从 miniprogram_npm 中加载
-    // 常见导出形态：CJS 默认导出、命名导出
-    // eslint-disable-next-line
-    const mod = require('iztro');
-    if (!mod) return null;
-    return mod.default || mod; 
-  } catch (e) {
-    return null;
+  if (iztro !== null) {
+    return iztro;
   }
+  
+  try {
+    // 方法1：直接require
+    const mod = require('iztro');
+    if (mod && mod.astro) {
+      iztro = mod;
+      console.log('✅ iztro库加载成功 (直接引入)');
+      return iztro;
+    }
+  } catch (e) {
+    console.warn('方法1失败:', e.message);
+  }
+
+  try {
+    // 方法2：从miniprogram_npm加载
+    const mod = require('../miniprogram_npm/iztro/index');
+    if (mod && mod.astro) {
+      iztro = mod;
+      console.log('✅ iztro库加载成功 (miniprogram_npm)');
+      return iztro;
+    }
+  } catch (e) {
+    console.warn('方法2失败:', e.message);
+  }
+
+  try {
+    // 方法3：尝试不同的路径
+    const mod = require('miniprogram_npm/iztro/index.js');
+    if (mod && mod.astro) {
+      iztro = mod;
+      console.log('✅ iztro库加载成功 (相对路径)');
+      return iztro;
+    }
+  } catch (e) {
+    console.warn('方法3失败:', e.message);
+  }
+
+  console.warn('⚠️ iztro库加载失败，将使用模拟数据');
+  iztro = false; // 标记为失败，避免重复尝试
+  return null;
 }
 
-// 将页面的 profile 映射为 iztro 预期参数；尽量字段直传
+// 将profile数据转换为iztro参数
 function mapProfileToParams(profile) {
-  const [year, month, day] = (profile.date || '2001-12-01').split('-').map((x) => Number(x));
-  const [hour, minute] = (profile.time || '12:20').split(':').map((x) => Number(x));
+  // 解析日期
+  const [year, month, day] = (profile.date || '1991-1-22').split('-').map(x => parseInt(x));
+  
+  // 解析时间并转换为时辰索引
+  const [hour, minute] = (profile.time || '04:00').split(':').map(x => parseInt(x));
+  
+  // 时辰索引转换
+  const timeIndexMap = {
+    23: 0, 0: 0, 1: 0,        // 子时
+    2: 1, 3: 1,               // 丑时
+    4: 2, 5: 2,               // 寅时
+    6: 3, 7: 3,               // 卯时
+    8: 4, 9: 4,               // 辰时
+    10: 5, 11: 5,             // 巳时
+    12: 6, 13: 6,             // 午时
+    14: 7, 15: 7,             // 未时
+    16: 8, 17: 8,             // 申时
+    18: 9, 19: 9,             // 酉时
+    20: 10, 21: 10,           // 戌时
+    22: 11                    // 亥时
+  };
+  
+  const timeIndex = timeIndexMap[hour] || 0;
+  
   return {
+    date: profile.date,
+    timeIndex: timeIndex,
+    gender: profile.gender || '男',
+    // 兼容其他可能的参数格式
     year,
     month,
     day,
     hour,
     minute,
-    sex: profile.gender === 'male' ? 1 : (profile.gender === 'female' ? 0 : -1),
-    city: profile.city || '北京市',
-    lunar: profile.calendarType === 'lunar',
+    sex: profile.gender === '男' ? 1 : 0,
+    city: profile.city || '太原市',
+    lunar: profile.calendarType === 'lunar' || false,
     trueSolarTime: !!profile.trueSolarTime
   };
 }
 
-// 返回 iztro 的原始命盘对象（若可用）
+// 使用iztro计算排盘
 function computeRawChart(profile) {
-  const Iztro = tryLoadIztro();
-  if (!Iztro) return null;
-  const params = mapProfileToParams(profile);
-  let chart = null;
-  try {
-    if (typeof Iztro === 'function') {
-      try { chart = new Iztro(params); } catch (_) {}
-    }
-    if (!chart && Iztro && typeof Iztro.compute === 'function') {
-      chart = Iztro.compute(params);
-    }
-    if (!chart && Iztro && typeof Iztro.create === 'function') {
-      chart = Iztro.create(params);
-    }
-  } catch (_) {
-    chart = null;
+  const mod = tryLoadIztro();
+  if (!mod || !mod.astro) {
+    return null;
   }
-  return chart || null;
+
+  const params = mapProfileToParams(profile);
+  
+  try {
+    // 使用iztro的bySolar方法
+    const astrolabe = mod.astro.bySolar(
+      params.date,
+      params.timeIndex,
+      params.gender
+    );
+    
+    if (astrolabe) {
+      console.log('🌟 iztro排盘计算成功');
+      return astrolabe;
+    }
+  } catch (error) {
+    console.error('iztro计算失败:', error);
+  }
+  
+  return null;
 }
 
-// 计算命盘（若 iztro 可用）。
-// 约定输出：{ summaryText: string, palaces: {name, stars}[] }
+// 高级接口：返回适配后的排盘数据
 function computeChartWithIztro(profile) {
-  const chart = computeRawChart(profile);
-  if (!chart) return null;
-
-  // 归纳为页面可用的结构（尽量容错）
-  const palaces = [];
-  const rawPalaces = chart.palaces || chart.gong || chart.palaceList || [];
-  for (let i = 0; i < rawPalaces.length; i += 1) {
-    const p = rawPalaces[i] || {};
-    const name = p.name || p.label || `宫位${i + 1}`;
-    const starsArr = p.stars || p.starList || p.yao || [];
-    const starNames = Array.isArray(starsArr) ? starsArr.map((s) => (s.name || s)) : [];
-    const stars = starNames.join(' ');
-    palaces.push({ name, stars, starNames });
+  const rawChart = computeRawChart(profile);
+  if (!rawChart) {
+    return null;
   }
 
-  const summaryText = chart.summary || chart.brief || '命盘已生成';
-  return { summaryText, palaces, __raw: chart };
+  try {
+    // 转换为标准格式
+    const palaces = [];
+    
+    if (rawChart.palaces && Array.isArray(rawChart.palaces)) {
+      rawChart.palaces.forEach((palace, index) => {
+        const stars = [];
+        
+        // 收集所有星曜
+        if (palace.majorStars) {
+          palace.majorStars.forEach(star => {
+            stars.push(star.name || star);
+          });
+        }
+        if (palace.minorStars) {
+          palace.minorStars.forEach(star => {
+            stars.push(star.name || star);
+          });
+        }
+        if (palace.adjectiveStars) {
+          palace.adjectiveStars.forEach(star => {
+            stars.push(star.name || star);
+          });
+        }
+        
+        palaces.push({
+          name: palace.name || `宫位${index + 1}`,
+          stars: stars.join(' '),
+          starNames: stars,
+          index: index,
+          palace: palace // 保留原始数据
+        });
+      });
+    }
+
+    const summaryText = `${rawChart.gender} ${rawChart.solarDate} ${rawChart.lunarDate} ${rawChart.fiveElementsClass}`;
+    
+    return {
+      summaryText,
+      palaces,
+      __raw: rawChart
+    };
+  } catch (error) {
+    console.error('转换iztro数据失败:', error);
+    return null;
+  }
+}
+
+// 检查iztro是否可用
+function isIztroAvailable() {
+  const mod = tryLoadIztro();
+  return mod && mod.astro && typeof mod.astro.bySolar === 'function';
 }
 
 module.exports = {
   computeChartWithIztro,
-  computeRawChart
+  computeRawChart,
+  isIztroAvailable,
+  tryLoadIztro
 };
-
