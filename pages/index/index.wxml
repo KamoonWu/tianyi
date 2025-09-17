@@ -22,7 +22,7 @@
 </view>
 
 <view class="page-container">
-  <view class="chart-section">
+  <view class="chart-section" wx:if="{{!hideChart}}">
     <view class="chart-controls">
       <button class="btn btn-outline" size="mini" bindtap="goSettings">设置</button>
       <button class="btn btn-secondary" size="mini" bindtap="showProfileSelector">命例</button>
@@ -36,5 +36,16 @@
       bind:palaceClick="onPalaceClick">
     </zwds-chart>
   </view>
+  
+  <!-- 当隐藏图表时显示占位内容 -->
+  <view class="chart-section" wx:if="{{hideChart}}">
+    <view class="chart-controls">
+      <button class="btn btn-outline" size="mini" bindtap="goSettings">设置</button>
+      <button class="btn btn-secondary" size="mini" bindtap="showProfileSelector">命例</button>
+      <button class="btn btn-primary" size="mini" bindtap="testChart">测试</button>
+    </view>
+    <view class="chart-placeholder">
+      <text>正在加载命例选择器...</text>
+    </view>
+  </view>
 </view>
-
