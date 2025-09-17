@@ -2,6 +2,7 @@
   <view class="chart-section">
     <view class="chart-controls">
       <button class="btn btn-outline" size="mini" bindtap="goSettings">设置</button>
+      <button class="btn btn-secondary" size="mini" bindtap="showProfileSelector">命例</button>
       <button class="btn btn-primary" size="mini" bindtap="testChart">测试</button>
     </view>
     <zwds-chart 
@@ -11,6 +12,27 @@
       flowYear="{{flowYear}}"
       bind:palaceClick="onPalaceClick">
     </zwds-chart>
+  </view>
+
+  <!-- 命例选择弹窗 -->
+  <view class="profile-selector {{showSelector ? 'show' : ''}}" catchtap="hideProfileSelector">
+    <view class="selector-content" catchtap="stopPropagation">
+      <view class="selector-title">选择命例</view>
+      <view class="profile-list">
+        <view 
+          wx:for="{{profiles}}" 
+          wx:key="id" 
+          class="profile-item {{currentProfileIndex === index ? 'active' : ''}}"
+          data-index="{{index}}"
+          bindtap="selectProfile">
+          <view class="profile-name">{{item.name}}</view>
+          <view class="profile-desc">{{item.description}}</view>
+        </view>
+      </view>
+      <view class="selector-footer">
+        <button class="btn btn-outline" size="mini" bindtap="hideProfileSelector">取消</button>
+      </view>
+    </view>
   </view>
 </view>
 
