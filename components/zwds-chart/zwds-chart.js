@@ -454,25 +454,30 @@ Component({
         // 第一行：姓名和五行局
         ctx.fillStyle = '#1e293b';
         ctx.font = '8px sans-serif';
-        ctx.fillText(`${center.name || '—'} ${center.fiveElements || '—'}`, contentX, currentY);
+        ctx.fillText(`${center.name || '—'} ${center.gender || '—'} ${center.fiveElements || '—'}`, contentX, currentY);
         currentY += lineHeight;
                   
-        // 第二行：真太阳时
+        // 第二行：八字
+        ctx.fillStyle = '#1e293b';
+        ctx.fillText(`八字：${center.bazi || '—'}`, contentX, currentY);
+        currentY += lineHeight;
+                  
+        // 第三行：真太阳时
         ctx.fillStyle = '#64748b';
         ctx.fillText(`真太阳时：${center.trueSolarTime || '—'}`, contentX, currentY);
         currentY += lineHeight;
                   
-        // 第三行：钟表时间
+        // 第四行：钟表时间
         ctx.fillStyle = '#64748b';
         ctx.fillText(`钟表时间：${center.clockTime || '—'}`, contentX, currentY);
         currentY += lineHeight;
                   
-        // 第四行：农历时间
+        // 第五行：农历时间
         ctx.fillStyle = '#64748b';
         ctx.fillText(`${center.lunarDate || '—'}`, contentX, currentY);
         currentY += lineHeight;
                   
-        // 第五行：命主、身主、子斗
+        // 第六行：命主、身主、子斗
         ctx.fillStyle = '#1e293b';
         ctx.fillText(`命主：${center.lifeMaster || '—'} 身主：${center.bodyMaster || '—'} 子斗：${center.ziDou || '—'}`, contentX, currentY);
       } else {

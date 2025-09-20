@@ -65,6 +65,35 @@ Page({
 
   // 构建中宫信息
   buildCenterFromProfile(profile, palaceLayoutResult) {
+    // 构建八字信息
+    const bazi = `${palaceLayoutResult.calculation.yearStem || ''}${palaceLayoutResult.calculation.yearBranch || ''} ${palaceLayoutResult.calculation.monthStem || ''}${palaceLayoutResult.calculation.monthBranch || ''} ${palaceLayoutResult.calculation.dayStem || ''}${palaceLayoutResult.calculation.dayBranch || ''} ${palaceLayoutResult.calculation.hourStem || ''}${palaceLayoutResult.calculation.hourBranch || ''}`;
+    
+    // 格式化真太阳时为YYYY-MM-DD HH:MM
+    let formattedTrueSolarTime = '未转换';
+    if (palaceLayoutResult.calculation.trueSolarTime) {
+      const trueSolarTime = palaceLayoutResult.calculation.trueSolarTime;
+      // 如果已经是格式化的字符串，直接使用
+      if (typeof trueSolarTime === 'string' && trueSolarTime.includes('-')) {
+        formattedTrueSolarTime = trueSolarTime;
+      } 
+      // 如果是日期对象或其他格式，进行格式化
+      else {
+        try {
+          const date = new Date(trueSolarTime);
+          if (!isNaN(date.getTime())) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            formattedTrueSolarTime = `${year}-${month}-${day} ${hours}:${minutes}`;
+          }
+        } catch (e) {
+          console.error('格式化真太阳时出错:', e);
+        }
+      }
+    }
+
     return {
       name: profile.name || '—',
       gender: profile.gender || '—',
@@ -72,11 +101,12 @@ Page({
       lunarDate: `农历${palaceLayoutResult.calculation.yearStem || ''}${palaceLayoutResult.calculation.yearBranch || ''}年${palaceLayoutResult.calculation.lunarMonth}月${palaceLayoutResult.calculation.lunarDay}日 ${palaceLayoutResult.calculation.hourName || ''}`,
       city: profile.city || '—',
       clockTime: `${profile.date} ${profile.time}`,
-      trueSolarTime: palaceLayoutResult.calculation.trueSolarTime ? `已转换 (${palaceLayoutResult.calculation.trueSolarTime})` : '未转换',
+      trueSolarTime: formattedTrueSolarTime,
       lifeMaster: palaceLayoutResult.mingGong.stem || '—', // 命主为命宫天干
       bodyMaster: palaceLayoutResult.shenGong.stem || '—', // 身主为身宫天干
       ziDou: palaceLayoutResult.ziWeiBranch || '—', // 紫微星所在地支
       fiveElements: palaceLayoutResult.fiveElements ? palaceLayoutResult.fiveElements.name : '—', // 五行局
+      bazi: bazi, // 八字信息
       mingGong: palaceLayoutResult.mingGong,
       shenGong: palaceLayoutResult.shenGong,
       calculation: palaceLayoutResult.calculation
