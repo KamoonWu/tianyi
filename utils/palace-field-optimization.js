@@ -73,7 +73,7 @@ const STAR_CATEGORIES = {
   }
 };
 
-// 宫位字段结构定义 - 所有Y坐标增加5px
+// 宫位字段结构定义
 const PALACE_FIELD_STRUCTURE = {
   // 主星：左上角区域
   mainStars: {
@@ -441,24 +441,32 @@ function getPalaceFieldData(palace, flowYearData) {
     return auxStarOrder.indexOf(a.name) - auxStarOrder.indexOf(b.name);
   });
   
-  // 格式化星曜亮度显示
+  // 格式化星曜亮度显示 - 按照ziwei.pro标准
   const formattedMainStars = sortedMainStars.map(star => {
+    // 只显示非"平"亮度
     if (!star.brightness || star.brightness === '平') {
-      return star; // 平亮度不显示
+      return {
+        ...star,
+        displayName: star.name // 不显示亮度
+      };
     }
     return {
       ...star,
-      name: `${star.name}${star.brightness}` // 将亮度附加到名称
+      displayName: `${star.name}${star.brightness}` // 将亮度附加到名称
     };
   });
   
   const formattedAuxStars = sortedAuxStars.map(star => {
+    // 只显示非"平"亮度
     if (!star.brightness || star.brightness === '平') {
-      return star; // 平亮度不显示
+      return {
+        ...star,
+        displayName: star.name // 不显示亮度
+      };
     }
     return {
       ...star,
-      name: `${star.name}${star.brightness}` // 将亮度附加到名称
+      displayName: `${star.name}${star.brightness}` // 将亮度附加到名称
     };
   });
   
@@ -543,180 +551,166 @@ function drawPalaceField(ctx, fieldData, fieldConfig, isHighlighted = false) {
         if (text.length >= 2) {
           ctx.fillText(text[0], baseX, topY);
           ctx.fillText(text[1], baseX, topY + lineGap);
-        } else {
+        } else if (text.length === 1) {
           ctx.fillText(text, baseX, topY);
         }
       });
-      return; // longevity 分类已处理
     }
-    else if (fieldConfig.verticalText && fieldConfig.horizontal) {
-      // 水平排列的垂直文字：每个星曜垂直排列，缩短间距
+    // 主星、辅星：垂直文字，水平排列
+    else if (category === 'main' || category === 'auxiliary') {
+      const { columnWidth, columnGap, lineHeight, verticalText, horizontal } = fieldConfig;
+      
+      let currentX = x;
+      let currentY = y;
+      let columnCount = 0;
+      
       items.forEach((item, index) => {
-        const text = (item && item.name) ? item.name : (item || '');
-        const brightness = (item && item.brightness) ? item.brightness : '';
-        const columnWidth = fieldConfig.columnWidth || 8;
-        const columnGap = fieldConfig.columnGap || 2;
-        const baseX = x + index * (columnWidth + columnGap); // 列间距为2px
+        // 使用displayName而不是name，确保亮度正确显示
+        const text = item.displayName || item.name || '';
         
-        // 将星曜名称的每个字符垂直排列
-        for (let charIndex = 0; charIndex < text.length; charIndex++) {
-          const char = text[charIndex];
-          const charY = y + (charIndex * 12); // 垂直间距12px
+        if (verticalText) {
+          // 垂直绘制文字
+          const chars = text.split('');
+          let charY = currentY;
           
-          console.log(`  📝 垂直绘制字符: "${char}" 在 (${baseX}, ${charY})`);
-          ctx.fillText(char, baseX, charY);
-        }
-        
-        // 在星名下方增加亮度（如 庙/旺/陷/平），颜色为 #9592A7，距离名称1px
-        let brightnessY = y + (text.length * 12) + 1; // 名称末行下方1px
-        if (brightness) {
-          const prevFill = ctx.fillStyle;
-          ctx.fillStyle = '#9592A7';
-          ctx.fillText(brightness, baseX, brightnessY);
-          ctx.fillStyle = prevFill;
+          chars.forEach(char => {
+            ctx.fillText(char, currentX, charY);
+            console.log(`  📝 垂直绘制字符: "${char}" 在 (${currentX}, ${charY})`);
+            charY += lineHeight;
+          });
+          
+          // 移动到下一列
+          if (horizontal) {
+            currentX += columnWidth + columnGap;
+            columnCount++;
+            
+            // 如果列数达到上限，换行
+            if (columnCount >= 3) {
+              currentX = x;
+              currentY += 40; // 换到下一行
+              columnCount = 0;
+            }
+          } else {
+            currentY += chars.length * lineHeight + columnGap;
+          }
         } else {
-          // 若无亮度，占位使四化与亮度不同行，也单独一行
-          brightnessY = y + (text.length * 12) - 1; // 使下一行（四化）仍与名称分离2px
-        }
-        
-        // 四化（禄/权/科/忌）放在亮度下方2px，单独一行，按“科权禄忌”的顺序
-        const collectMutagen = () => {
-          const present = new Set();
-          const candidate = (item && (item.mutagen || item.mutagens || item.hua)) || '';
-          const scanStr = (s) => {
-            if (!s || typeof s !== 'string') return;
-            if (s.includes('禄')) present.add('禄');
-            if (s.includes('权')) present.add('权');
-            if (s.includes('科')) present.add('科');
-            if (s.includes('忌')) present.add('忌');
-          };
-          if (Array.isArray(candidate)) {
-            candidate.forEach(v => scanStr(typeof v === 'string' ? v : (v?.name || '')));
-          } else if (typeof candidate === 'string') {
-            scanStr(candidate);
+          // 水平绘制文字
+          ctx.fillText(text, currentX, currentY);
+          console.log(`  📝 水平绘制文字: "${text}" 在 (${currentX}, ${currentY})`);
+          
+          // 移动到下一行或列
+          if (horizontal) {
+            currentX += ctx.measureText(text).width + columnGap;
+          } else {
+            currentY += lineHeight;
           }
-          // 宫级兜底
-          if (fieldConfig.palaceFourHua) {
-            const f = fieldConfig.palaceFourHua;
-            if (f.lu) present.add('禄');
-            if (f.quan) present.add('权');
-            if (f.ke) present.add('科');
-            if (f.ji) present.add('忌');
-          }
-          // 输出顺序：科权禄忌
-          const order = ['科','权','禄','忌'];
-          return order.filter(ch => present.has(ch)).join('');
-        };
-        const huaText = collectMutagen();
-        if (huaText) {
-          const huaY = brightnessY + 8 + 2; // 亮度下一行，距离2px
-          ctx.fillText(huaText, baseX, huaY);
         }
-      });
-    } else if (fieldConfig.verticalStack) {
-      // 从下往上堆叠（48神煞）
-      items.forEach((item, index) => {
-        const text = item.name || item;
-        // 从下往上排列，起始位置在底部
-        const itemY = y + height - ((index + 1) * 12); // 从下往上
-        
-        console.log(`  📝 48神煞绘制: "${text}" 在 (${x}, ${itemY})`);
-        ctx.fillText(text, x, itemY);
-      });
-    } else {
-      // 普通数组
-      items.forEach((item, index) => {
-        const text = item.name || item;
-        const itemY = y + (index * 12);
-        
-        console.log(`  📝 绘制数组项: "${text}" 在 (${x}, ${itemY})`);
-        ctx.fillText(text, x, itemY);
       });
     }
-  } else if (typeof fieldData === 'object' && fieldData.name) {
-    // 对象类型，绘制名称和亮度
-    const text = fieldData.brightness ? `${fieldData.name}${fieldData.brightness}` : fieldData.name;
-    const drawX = align === 'right' ? x + width : x;
-    
-    console.log(`  📝 绘制对象: "${text}" 在 (${drawX}, ${y})`);
-    ctx.fillText(text, drawX, y);
-  } else if (typeof fieldData === 'object') {
-    // 复合对象：左下角复合堆叠（岁前→将前→博士），水平单行显示，行距=10
-    if (category === 'leftBottomGods') {
+    // 杂耀：水平文字，垂直排列
+    else if (category === 'misc') {
+      const { lineHeight } = fieldConfig;
+      let currentY = y;
+      
+      items.forEach(item => {
+        const text = item.name || '';
+        ctx.fillText(text, x, currentY);
+        console.log(`  📝 绘制杂耀: "${text}" 在 (${x}, ${currentY})`);
+        currentY += lineHeight;
+      });
+    }
+    // 左下角神煞（岁前、将前、博士）
+    else if (category === 'leftBottomGods') {
       const anchorBottom = Number.isFinite(fieldConfig.anchorBottom) ? fieldConfig.anchorBottom : y + height;
-      const fontHeight = 8;
-      const lineStep = fontHeight + 2; // 纵间距2px
-      const baseX = x; // 左对齐
-      let currentBottom = anchorBottom;
-
-      const drawStack = (arr = []) => {
-        const layout = [];
-        arr.forEach((raw) => {
-          const text = (raw?.name ?? raw ?? '').toString();
-          const itemHeight = fontHeight;
-          const topY = currentBottom - itemHeight;
-          layout.push({ text, topY });
-          currentBottom = topY - 2; // 与上一项之间留2px
-        });
-        layout.forEach(({ text, topY }) => {
-          ctx.fillText(text, baseX, topY);
-        });
+      const lineHeight = 12;
+      const maxLines = 3;
+      
+      let currentY = anchorBottom - lineHeight * Math.min(items.length, maxLines);
+      
+      items.slice(0, maxLines).forEach(item => {
+        const text = item.name || '';
+        ctx.fillText(text, x, currentY);
+        console.log(`  📝 绘制神煞: "${text}" 在 (${x}, ${currentY})`);
+        currentY += lineHeight;
+      });
+    }
+    // 神煞
+    else if (category === 'divine') {
+      const { lineHeight, maxItems } = fieldConfig;
+      let currentY = y;
+      
+      items.slice(0, maxItems || 2).forEach(item => {
+        const text = item.name || '';
+        ctx.fillText(text, x, currentY);
+        console.log(`  📝 绘制神煞: "${text}" 在 (${x}, ${currentY})`);
+        currentY += lineHeight;
+      });
+    }
+    // 默认数组绘制方式
+    else {
+      items.forEach((item, index) => {
+        const text = item.name || item.toString();
+        ctx.fillText(text, x, y + index * 12);
+        console.log(`  📝 绘制数组项: "${text}" 在 (${x}, ${y + index * 12})`);
+      });
+    }
+  }
+  // 四化标记（右上角）
+  else if (category === 'fourTransformations') {
+    if (Array.isArray(fieldData) && fieldData.length > 0) {
+      // 绘制四化图标
+      const icons = {
+        '禄': '禄',
+        '权': '权',
+        '科': '科',
+        '忌': '忌'
       };
-
-      // 顺序：岁前 → 将前 → 博士（自下而上）
-      drawStack(fieldData.suiQian);
-      drawStack(fieldData.jiangQian);
-      drawStack(fieldData.boShi);
-      return;
+      
+      let currentX = x;
+      fieldData.forEach(type => {
+        const icon = icons[type] || type;
+        ctx.fillStyle = type === '忌' ? '#ef4444' : '#3b82f6'; // 化忌用红色，其他用蓝色
+        ctx.fillText(icon, currentX, y);
+        console.log(`  📝 绘制四化: "${icon}" 在 (${currentX}, ${y})`);
+        currentX -= 10; // 向左移动10px
+      });
     }
-  } else if (typeof fieldData === 'string') {
-    // 字符串类型，根据verticalText属性决定绘制方式
-    const text = fieldData;
-    
-    if (fieldConfig.verticalText && text.length > 1) {
-      // 垂直文字：每个字符垂直排列（如天干地支）
-      // 若存在 anchorBottom，进行底对齐（两字竖排，以底对齐到 anchorBottom）
-      const anchorBottom = Number.isFinite(fieldConfig.anchorBottom) ? fieldConfig.anchorBottom : null;
-      if (anchorBottom) {
-        const fontHeight = 8;
-        const lineGap = 12;
-        const totalHeight = (text.length - 1) * lineGap + fontHeight; // 2字=20
-        const topAlignedY = anchorBottom - totalHeight;
-        const drawX = align === 'right' ? x + width : x;
-        for (let charIndex = 0; charIndex < text.length; charIndex++) {
-          const char = text[charIndex];
-          const charY = topAlignedY + (charIndex * lineGap);
-          ctx.fillText(char, drawX, charY);
-        }
-        return;
-      }
+  }
+  // 天干地支（右下角）
+  else if (category === 'heavenlyStemBranch') {
+    if (typeof fieldData === 'string' && fieldData.length > 0) {
+      // 天干地支竖排
+      const anchorBottom = Number.isFinite(fieldConfig.anchorBottom) ? fieldConfig.anchorBottom : y + height;
+      const chars = fieldData.split('');
+      let currentY = anchorBottom - chars.length * 12;
       
-      for (let charIndex = 0; charIndex < text.length; charIndex++) {
-        const char = text[charIndex];
-        const charY = y + (charIndex * 12); // 垂直间距12px
-        const drawX = align === 'right' ? x + width : x;
-        
-        console.log(`  📝 垂直绘制字符: "${char}" 在 (${drawX}, ${charY})`);
-        ctx.fillText(char, drawX, charY);
-      }
-    } else {
-      // 普通文字：水平绘制
-      const drawX = align === 'right' ? x + width : x;
-      
-      // 如果有anchorBottom属性，进行底部对齐
-      const anchorBottom = Number.isFinite(fieldConfig.anchorBottom) ? fieldConfig.anchorBottom : null;
-      if (anchorBottom && category === 'palaceName') {
-        const fontHeight = 8;
-        const drawY = anchorBottom - fontHeight;
-        
-        console.log(`  📝 底部对齐绘制字符串: "${text}" 在 (${drawX}, ${drawY})`);
-        ctx.fillText(text, drawX, drawY);
-        return;
-      }
-      
-      console.log(`  📝 绘制字符串: "${text}" 在 (${drawX}, ${y})`);
-      ctx.fillText(text, drawX, y);
+      chars.forEach(char => {
+        ctx.fillText(char, x, currentY);
+        console.log(`  📝 垂直绘制天干地支: "${char}" 在 (${x}, ${currentY})`);
+        currentY += 12;
+      });
     }
+  }
+  // 宫位名称（右下角）
+  else if (category === 'palaceName') {
+    if (typeof fieldData === 'string' && fieldData.length > 0) {
+      // 宫位名称底部对齐
+      const anchorBottom = Number.isFinite(fieldConfig.anchorBottom) ? fieldConfig.anchorBottom : y + height;
+      const baseY = anchorBottom - 5; // 底部留出5px间距
+      
+      ctx.fillText(fieldData, x + width, baseY);
+      console.log(`  📝 底部对齐绘制字符串: "${fieldData}" 在 (${x + width}, ${baseY})`);
+    }
+  }
+  // 字符串类型，直接绘制
+  else if (typeof fieldData === 'string' && fieldData.length > 0) {
+    ctx.fillText(fieldData, x, y);
+    console.log(`  📝 绘制字符串: "${fieldData}" 在 (${x}, ${y})`);
+  }
+  // 对象类型，尝试获取name属性
+  else if (typeof fieldData === 'object' && fieldData !== null && fieldData.name) {
+    ctx.fillText(fieldData.name, x, y);
+    console.log(`  📝 绘制对象名称: "${fieldData.name}" 在 (${x}, ${y})`);
   }
   
   console.log(`✅ 字段 ${category} 绘制完成`);
