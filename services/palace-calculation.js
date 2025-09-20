@@ -734,37 +734,46 @@ function placeMainStars(ziWeiBranch, palaces) {
   const mainStarsPositions = {};
   
   // 紫微系六星：紫微、天机、太阳、武曲、天同、廉贞
-  // 紫微系口诀：紫微天机逆行，隔一阳武天同行，廉贞反首紫微宫
+  // 紫微系口诀：紫微天机星逆行，隔一阳武天同行，廉贞反首紫微宫
   
   // 1. 安紫微星
   mainStarsPositions['紫微'] = ziWeiBranch;
+  console.log(`📍 安紫微星在${ziWeiBranch}宫`);
   
-  // 2. 安天机星（紫微顺行一位）
-  const tianJiIndex = (ziWeiIndex + 1) % 12;
+  // 2. 安天机星（紫微逆行一位）
+  // 注意：逆行是逆时针，即减一位
+  const tianJiIndex = (ziWeiIndex - 1 + 12) % 12;
   mainStarsPositions['天机'] = EARTHLY_BRANCHES[tianJiIndex];
+  console.log(`📍 安天机星在${EARTHLY_BRANCHES[tianJiIndex]}宫（紫微逆行一位）`);
   
   // 3. 安太阳星（紫微顺行三位）
   const taiYangIndex = (ziWeiIndex + 3) % 12;
   mainStarsPositions['太阳'] = EARTHLY_BRANCHES[taiYangIndex];
+  console.log(`📍 安太阳星在${EARTHLY_BRANCHES[taiYangIndex]}宫（紫微顺行三位）`);
   
   // 4. 安武曲星（紫微顺行四位）
   const wuQuIndex = (ziWeiIndex + 4) % 12;
   mainStarsPositions['武曲'] = EARTHLY_BRANCHES[wuQuIndex];
+  console.log(`📍 安武曲星在${EARTHLY_BRANCHES[wuQuIndex]}宫（紫微顺行四位）`);
   
   // 5. 安天同星（紫微顺行五位）
   const tianTongIndex = (ziWeiIndex + 5) % 12;
   mainStarsPositions['天同'] = EARTHLY_BRANCHES[tianTongIndex];
+  console.log(`📍 安天同星在${EARTHLY_BRANCHES[tianTongIndex]}宫（紫微顺行五位）`);
   
-  // 6. 安廉贞星（紫微顺行六位）
+  // 6. 安廉贞星（紫微顺行六位，即对宫）
   const lianZhenIndex = (ziWeiIndex + 6) % 12;
   mainStarsPositions['廉贞'] = EARTHLY_BRANCHES[lianZhenIndex];
+  console.log(`📍 安廉贞星在${EARTHLY_BRANCHES[lianZhenIndex]}宫（紫微顺行六位，对宫）`);
   
   // 天府系八星：天府、太阴、贪狼、巨门、天相、天梁、七杀、破军
   // 天府系口诀：天府居午宫，顺数至紫微，逆数安天府，余星逐宫布
   
   // 7. 安天府星（紫微对宫，即相隔六位）
-  const tianFuIndex = (ziWeiIndex + 6) % 12;
+  // 注意：天府与廉贞同宫
+  const tianFuIndex = lianZhenIndex;
   mainStarsPositions['天府'] = EARTHLY_BRANCHES[tianFuIndex];
+  console.log(`📍 安天府星在${EARTHLY_BRANCHES[tianFuIndex]}宫（与廉贞同宫）`);
   
   // 8-14. 安其余七颗主星（天府系列，逆行安星）
   const tianFuStars = ['天府', '太阴', '贪狼', '巨门', '天相', '天梁', '七杀', '破军'];
@@ -772,6 +781,7 @@ function placeMainStars(ziWeiBranch, palaces) {
   for (let i = 1; i < tianFuStars.length; i++) {
     const starIndex = (tianFuIndex - i + 12) % 12;
     mainStarsPositions[tianFuStars[i]] = EARTHLY_BRANCHES[starIndex];
+    console.log(`📍 安${tianFuStars[i]}星在${EARTHLY_BRANCHES[starIndex]}宫（天府逆行${i}位）`);
   }
   
   // 星曜亮度表（庙、旺、得、利、平、闲、陷）
@@ -839,43 +849,71 @@ function placeAuxiliaryStars(lunarMonth, birthHourBranch, yearStem, yearBranch, 
   // 创建辅星位置映射
   const auxStarsPositions = {};
   
-  // 1. 安左辅、右弼（以寅宫为起点，顺数至生月）
+  // 1. 安左辅、右弼
+  // 口诀：左辅右弼安命坐，寅起正月顺数去
+  // 解释：从寅宫开始，顺数到生月，安左辅；其对宫安右弼
   const leftRightIndex = (2 + lunarMonth - 1) % 12; // 寅宫索引为2
   auxStarsPositions['左辅'] = EARTHLY_BRANCHES[leftRightIndex];
   auxStarsPositions['右弼'] = EARTHLY_BRANCHES[(leftRightIndex + 6) % 12]; // 对宫
+  console.log(`📍 安左辅在${EARTHLY_BRANCHES[leftRightIndex]}宫（寅宫顺数至生月）`);
+  console.log(`📍 安右弼在${EARTHLY_BRANCHES[(leftRightIndex + 6) % 12]}宫（左辅对宫）`);
   
-  // 2. 安文昌、文曲（以卯宫为起点，顺数至生时）
-  const wenChangIndex = (3 + EARTHLY_BRANCHES.indexOf(birthHourBranch)) % 12; // 卯宫索引为3
-  auxStarsPositions['文昌'] = EARTHLY_BRANCHES[wenChangIndex];
-  auxStarsPositions['文曲'] = EARTHLY_BRANCHES[(wenChangIndex + 6) % 12]; // 对宫
+  // 2. 安文昌、文曲
+  // 口诀：文昌文曲安时坐，卯起子时顺行去
+  // 解释：从卯宫开始，顺数到生时，安文昌；其对宫安文曲
+  const hourOrder = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+  const hourPosition = hourOrder.indexOf(birthHourBranch);
+  if (hourPosition === -1) {
+    console.error('❌ 无效的出生时辰地支:', birthHourBranch);
+  } else {
+    const wenChangIndex = (3 + hourPosition) % 12; // 卯宫索引为3
+    auxStarsPositions['文昌'] = EARTHLY_BRANCHES[wenChangIndex];
+    auxStarsPositions['文曲'] = EARTHLY_BRANCHES[(wenChangIndex + 6) % 12]; // 对宫
+    console.log(`📍 安文昌在${EARTHLY_BRANCHES[wenChangIndex]}宫（卯宫顺数至生时）`);
+    console.log(`📍 安文曲在${EARTHLY_BRANCHES[(wenChangIndex + 6) % 12]}宫（文昌对宫）`);
+  }
   
-  // 3. 安禄存、天马（根据年干）
-  const luCunIndex = getLuCunIndex(yearStem);
-  auxStarsPositions['禄存'] = EARTHLY_BRANCHES[luCunIndex];
+  // 3. 安禄存
+  // 口诀：禄存天干定，甲禄到寅宫，乙禄居卯位，丙戊在巳中，丁己禄在午，庚禄到申中，辛禄居酉位，壬禄亥中逢，癸禄在子中
+  const luCunMap = {
+    '甲': '寅', '乙': '卯', '丙': '巳', '丁': '午',
+    '戊': '巳', '己': '午', '庚': '申', '辛': '酉',
+    '壬': '亥', '癸': '子'
+  };
   
-  // 天马安法：寅午戌年在申，申子辰年在寅，巳酉丑年在亥，亥卯未年在巳
-  let tianMaIndex = -1;
+  if (luCunMap[yearStem]) {
+    const luCunBranch = luCunMap[yearStem];
+    auxStarsPositions['禄存'] = luCunBranch;
+    console.log(`📍 安禄存在${luCunBranch}宫（${yearStem}年禄存安${luCunBranch}）`);
+  }
+  
+  // 4. 安天马
+  // 口诀：天马常随太岁，寅午戌年在申，申子辰年在寅，巳酉丑年在亥，亥卯未年在巳
+  let tianMaBranch = '';
   if (['寅', '午', '戌'].includes(yearBranch)) {
-    tianMaIndex = EARTHLY_BRANCHES.indexOf('申');
+    tianMaBranch = '申';
   } else if (['申', '子', '辰'].includes(yearBranch)) {
-    tianMaIndex = EARTHLY_BRANCHES.indexOf('寅');
+    tianMaBranch = '寅';
   } else if (['巳', '酉', '丑'].includes(yearBranch)) {
-    tianMaIndex = EARTHLY_BRANCHES.indexOf('亥');
+    tianMaBranch = '亥';
   } else if (['亥', '卯', '未'].includes(yearBranch)) {
-    tianMaIndex = EARTHLY_BRANCHES.indexOf('巳');
-  }
-  if (tianMaIndex !== -1) {
-    auxStarsPositions['天马'] = EARTHLY_BRANCHES[tianMaIndex];
+    tianMaBranch = '巳';
   }
   
-  // 4. 安擎羊、陀罗（根据年干）
-  // 擎羊陀罗安法：甲羊戌陀辰，乙羊酉陀卯，丙羊申陀寅，丁羊未陀丑，
+  if (tianMaBranch) {
+    auxStarsPositions['天马'] = tianMaBranch;
+    console.log(`📍 安天马在${tianMaBranch}宫（${yearBranch}年天马安${tianMaBranch}）`);
+  }
+  
+  // 5. 安擎羊、陀罗
+  // 口诀：擎羊陀罗天干定，甲羊戌陀辰，乙羊酉陀卯，丙羊申陀寅，丁羊未陀丑，
   // 戊羊午陀子，己羊巳陀亥，庚羊辰陀戌，辛羊卯陀酉，壬羊寅陀申，癸羊丑陀未
   const qingYangMap = {
     '甲': '戌', '乙': '酉', '丙': '申', '丁': '未',
     '戊': '午', '己': '巳', '庚': '辰', '辛': '卯',
     '壬': '寅', '癸': '丑'
   };
+  
   const tuoLuoMap = {
     '甲': '辰', '乙': '卯', '丙': '寅', '丁': '丑',
     '戊': '子', '己': '亥', '庚': '戌', '辛': '酉',
@@ -884,76 +922,74 @@ function placeAuxiliaryStars(lunarMonth, birthHourBranch, yearStem, yearBranch, 
   
   if (qingYangMap[yearStem]) {
     const qingYangBranch = qingYangMap[yearStem];
-    const qingYangIndex = EARTHLY_BRANCHES.indexOf(qingYangBranch);
-    if (qingYangIndex !== -1) {
-      auxStarsPositions['擎羊'] = qingYangBranch;
-    }
+    auxStarsPositions['擎羊'] = qingYangBranch;
+    console.log(`📍 安擎羊在${qingYangBranch}宫（${yearStem}年擎羊安${qingYangBranch}）`);
   }
   
   if (tuoLuoMap[yearStem]) {
     const tuoLuoBranch = tuoLuoMap[yearStem];
-    const tuoLuoIndex = EARTHLY_BRANCHES.indexOf(tuoLuoBranch);
-    if (tuoLuoIndex !== -1) {
-      auxStarsPositions['陀罗'] = tuoLuoBranch;
-    }
+    auxStarsPositions['陀罗'] = tuoLuoBranch;
+    console.log(`📍 安陀罗在${tuoLuoBranch}宫（${yearStem}年陀罗安${tuoLuoBranch}）`);
   }
   
-  // 5. 安地空、地劫（根据年支）
-  // 地空地劫安法：子年在辰戌，丑年在巳亥，寅年在午子，卯年在未丑，
-  // 辰年在申寅，巳年在酉卯，午年在戌辰，未年在亥巳，
-  // 申年在子午，酉年在丑未，戌年在寅申，亥年在卯酉
+  // 6. 安地空、地劫
+  // 口诀：地空地劫年支定，子年居戌辰，丑年在亥巳，寅年居子午，卯年在丑未，
+  // 辰年在寅申，巳年在卯酉，午年在辰戌，未年在巳亥，申年在午子，酉年在未丑，戌年在申寅，亥年在酉卯
   const diKongJieMap = {
-    '子': ['辰', '戌'], '丑': ['巳', '亥'], '寅': ['午', '子'], '卯': ['未', '丑'],
-    '辰': ['申', '寅'], '巳': ['酉', '卯'], '午': ['戌', '辰'], '未': ['亥', '巳'],
-    '申': ['子', '午'], '酉': ['丑', '未'], '戌': ['寅', '申'], '亥': ['卯', '酉']
+    '子': ['戌', '辰'], '丑': ['亥', '巳'], '寅': ['子', '午'], '卯': ['丑', '未'],
+    '辰': ['寅', '申'], '巳': ['卯', '酉'], '午': ['辰', '戌'], '未': ['巳', '亥'],
+    '申': ['午', '子'], '酉': ['未', '丑'], '戌': ['申', '寅'], '亥': ['酉', '卯']
   };
   
   if (diKongJieMap[yearBranch]) {
     const diKongBranch = diKongJieMap[yearBranch][0];
     const diJieBranch = diKongJieMap[yearBranch][1];
     
-    const diKongIndex = EARTHLY_BRANCHES.indexOf(diKongBranch);
-    const diJieIndex = EARTHLY_BRANCHES.indexOf(diJieBranch);
-    
-    if (diKongIndex !== -1) {
-      auxStarsPositions['地空'] = diKongBranch;
-    }
-    
-    if (diJieIndex !== -1) {
-      auxStarsPositions['地劫'] = diJieBranch;
-    }
+    auxStarsPositions['地空'] = diKongBranch;
+    auxStarsPositions['地劫'] = diJieBranch;
+    console.log(`📍 安地空在${diKongBranch}宫（${yearBranch}年地空安${diKongBranch}）`);
+    console.log(`📍 安地劫在${diJieBranch}宫（${yearBranch}年地劫安${diJieBranch}）`);
   }
   
-  // 6. 安火星、铃星（根据月份）
-  // 火星安法：寅午戌月在寅，申子辰月在申，巳酉丑月在巳，亥卯未月在亥
-  // 铃星安法：寅午戌月在戌，申子辰月在辰，巳酉丑月在丑，亥卯未月在未
+  // 7. 安火星、铃星
+  // 口诀：火铃常随太阴，寅午戌月在寅戌，申子辰月在申辰，巳酉丑月在巳丑，亥卯未月在亥未
   let fireStarBranch = '';
   let bellStarBranch = '';
   
-  if ([1, 5, 9].includes(lunarMonth)) { // 寅、午、戌月
+  // 月支对应表
+  const monthBranchMap = {
+    1: '寅', 2: '卯', 3: '辰', 4: '巳', 5: '午', 6: '未',
+    7: '申', 8: '酉', 9: '戌', 10: '亥', 11: '子', 12: '丑'
+  };
+  
+  const monthBranch = monthBranchMap[lunarMonth] || '';
+  
+  if (['寅', '午', '戌'].includes(monthBranch)) {
     fireStarBranch = '寅';
     bellStarBranch = '戌';
-  } else if ([4, 8, 12].includes(lunarMonth)) { // 申、子、辰月
+  } else if (['申', '子', '辰'].includes(monthBranch)) {
     fireStarBranch = '申';
     bellStarBranch = '辰';
-  } else if ([3, 7, 11].includes(lunarMonth)) { // 巳、酉、丑月
+  } else if (['巳', '酉', '丑'].includes(monthBranch)) {
     fireStarBranch = '巳';
     bellStarBranch = '丑';
-  } else if ([2, 6, 10].includes(lunarMonth)) { // 亥、卯、未月
+  } else if (['亥', '卯', '未'].includes(monthBranch)) {
     fireStarBranch = '亥';
     bellStarBranch = '未';
   }
   
   if (fireStarBranch) {
     auxStarsPositions['火星'] = fireStarBranch;
+    console.log(`📍 安火星在${fireStarBranch}宫（${monthBranch}月火星安${fireStarBranch}）`);
   }
   
   if (bellStarBranch) {
     auxStarsPositions['铃星'] = bellStarBranch;
+    console.log(`📍 安铃星在${bellStarBranch}宫（${monthBranch}月铃星安${bellStarBranch}）`);
   }
   
-  // 7. 安天魁、天钺（根据年干）
-  // 天魁天钺安法：甲戊庚牛羊，乙己鼠猴乡，丙丁猪鸡位，壬癸蛇兔藏，六辛逢马虎
+  // 8. 安天魁、天钺
+  // 口诀：天魁天钺天干定，甲戊庚牛羊，乙己鼠猴乡，丙丁猪鸡位，壬癸蛇兔藏，六辛逢马虎
   const tianKuiYueMap = {
     '甲': ['丑', '未'], '乙': ['子', '申'], '丙': ['亥', '酉'], '丁': ['亥', '酉'],
     '戊': ['丑', '未'], '己': ['子', '申'], '庚': ['丑', '未'], '辛': ['午', '寅'],
@@ -964,16 +1000,10 @@ function placeAuxiliaryStars(lunarMonth, birthHourBranch, yearStem, yearBranch, 
     const tianKuiBranch = tianKuiYueMap[yearStem][0];
     const tianYueBranch = tianKuiYueMap[yearStem][1];
     
-    const tianKuiIndex = EARTHLY_BRANCHES.indexOf(tianKuiBranch);
-    const tianYueIndex = EARTHLY_BRANCHES.indexOf(tianYueBranch);
-    
-    if (tianKuiIndex !== -1) {
-      auxStarsPositions['天魁'] = tianKuiBranch;
-    }
-    
-    if (tianYueIndex !== -1) {
-      auxStarsPositions['天钺'] = tianYueBranch;
-    }
+    auxStarsPositions['天魁'] = tianKuiBranch;
+    auxStarsPositions['天钺'] = tianYueBranch;
+    console.log(`📍 安天魁在${tianKuiBranch}宫（${yearStem}年天魁安${tianKuiBranch}）`);
+    console.log(`📍 安天钺在${tianYueBranch}宫（${yearStem}年天钺安${tianYueBranch}）`);
   }
   
   // 辅星亮度表
@@ -1133,6 +1163,9 @@ function placeFourTransformationStars(yearStem, palaces) {
   console.log(`🌈 开始安四化星，年干：${yearStem}`);
   
   // 四化星映射表（标准版）
+  // 口诀：甲廉破武阳，乙机梁紫阴，丙同机昌贞，丁阴同机门，
+  //      戊狼阴弼机，己武狼梁曲，庚阳武阴同，辛门阳同昌，
+  //      壬梁紫阳武，癸破门狼辅
   const fourTransformationsMap = {
     '甲': { '禄': '廉贞', '权': '破军', '科': '武曲', '忌': '太阳' },
     '乙': { '禄': '天机', '权': '天梁', '科': '紫微', '忌': '太阴' },
@@ -1146,6 +1179,20 @@ function placeFourTransformationStars(yearStem, palaces) {
     '癸': { '禄': '破军', '权': '巨门', '科': '贪狼', '忌': '左辅' }
   };
   
+  // 四化星口诀解释
+  const fourHuaExplanation = {
+    '甲': '甲廉破武阳 - 甲年生，廉贞化禄，破军化权，武曲化科，太阳化忌',
+    '乙': '乙机梁紫阴 - 乙年生，天机化禄，天梁化权，紫微化科，太阴化忌',
+    '丙': '丙同机昌贞 - 丙年生，天同化禄，天机化权，文昌化科，廉贞化忌',
+    '丁': '丁阴同机门 - 丁年生，太阴化禄，天同化权，天机化科，巨门化忌',
+    '戊': '戊狼阴弼机 - 戊年生，贪狼化禄，太阴化权，右弼化科，天机化忌',
+    '己': '己武狼梁曲 - 己年生，武曲化禄，贪狼化权，天梁化科，文曲化忌',
+    '庚': '庚阳武阴同 - 庚年生，太阳化禄，武曲化权，太阴化科，天同化忌',
+    '辛': '辛门阳同昌 - 辛年生，巨门化禄，太阳化权，天同化科，文昌化忌',
+    '壬': '壬梁紫阳武 - 壬年生，天梁化禄，紫微化权，太阳化科，武曲化忌',
+    '癸': '癸破门狼辅 - 癸年生，破军化禄，巨门化权，贪狼化科，左辅化忌'
+  };
+  
   // 获取当前年干的四化星
   const fourTransformations = fourTransformationsMap[yearStem];
   
@@ -1153,6 +1200,8 @@ function placeFourTransformationStars(yearStem, palaces) {
     console.error('❌ 无效的年干:', yearStem);
     return palaces;
   }
+  
+  console.log(`📝 四化星口诀: ${fourHuaExplanation[yearStem]}`);
   
   // 四化星对应的影响和含义
   const fourHuaMeaning = {
@@ -1200,10 +1249,10 @@ function placeFourTransformationStars(yearStem, palaces) {
   
   // 输出四化星总结
   console.log(`\n🔄 四化星分布总结:`);
-  console.log(`  禄星: ${fourTransformations['禄']} → ${fourHuaPalaces['禄']}`);
-  console.log(`  权星: ${fourTransformations['权']} → ${fourHuaPalaces['权']}`);
-  console.log(`  科星: ${fourTransformations['科']} → ${fourHuaPalaces['科']}`);
-  console.log(`  忌星: ${fourTransformations['忌']} → ${fourHuaPalaces['忌']}`);
+  console.log(`  禄星: ${fourTransformations['禄']} → ${fourHuaPalaces['禄'] || '未找到'}`);
+  console.log(`  权星: ${fourTransformations['权']} → ${fourHuaPalaces['权'] || '未找到'}`);
+  console.log(`  科星: ${fourTransformations['科']} → ${fourHuaPalaces['科'] || '未找到'}`);
+  console.log(`  忌星: ${fourTransformations['忌']} → ${fourHuaPalaces['忌'] || '未找到'}`);
   
   return palaces;
 }
