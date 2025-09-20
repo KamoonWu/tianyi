@@ -65,8 +65,14 @@ Page({
 
   // 构建中宫信息
   buildCenterFromProfile(profile, palaceLayoutResult) {
-    // 构建八字信息
-    const bazi = `${palaceLayoutResult.calculation.yearStem || ''}${palaceLayoutResult.calculation.yearBranch || ''} ${palaceLayoutResult.calculation.monthStem || ''}${palaceLayoutResult.calculation.monthBranch || ''} ${palaceLayoutResult.calculation.dayStem || ''}${palaceLayoutResult.calculation.dayBranch || ''} ${palaceLayoutResult.calculation.hourStem || ''}${palaceLayoutResult.calculation.hourBranch || ''}`;
+    // 构建八字信息，明确标识年柱、月柱、日柱、时柱
+    const yearPillar = `${palaceLayoutResult.calculation.yearStem || ''}${palaceLayoutResult.calculation.yearBranch || ''}`;
+    const monthPillar = `${palaceLayoutResult.calculation.monthStem || ''}${palaceLayoutResult.calculation.monthBranch || ''}`;
+    const dayPillar = `${palaceLayoutResult.calculation.dayStem || ''}${palaceLayoutResult.calculation.dayBranch || ''}`;
+    const hourPillar = `${palaceLayoutResult.calculation.hourStem || ''}${palaceLayoutResult.calculation.hourBranch || ''}`;
+    
+    // 完整八字格式：年柱 月柱 日柱 时柱
+    const bazi = `年柱${yearPillar} 月柱${monthPillar} 日柱${dayPillar} 时柱${hourPillar}`;
     
     // 格式化真太阳时为YYYY-MM-DD HH:MM
     let formattedTrueSolarTime = '未转换';
@@ -107,6 +113,10 @@ Page({
       ziDou: palaceLayoutResult.ziWeiBranch || '—', // 紫微星所在地支
       fiveElements: palaceLayoutResult.fiveElements ? palaceLayoutResult.fiveElements.name : '—', // 五行局
       bazi: bazi, // 八字信息
+      yearPillar, // 年柱
+      monthPillar, // 月柱
+      dayPillar, // 日柱
+      hourPillar, // 时柱
       mingGong: palaceLayoutResult.mingGong,
       shenGong: palaceLayoutResult.shenGong,
       calculation: palaceLayoutResult.calculation

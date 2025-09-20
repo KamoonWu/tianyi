@@ -441,45 +441,65 @@ Component({
       ctx.textAlign = 'center';
       ctx.fillText('个人信息', x + w / 2, y + 20);
       ctx.textAlign = 'left';
-                
+            
       // 简化条件判断，只要有center数据就绘制
       if (center && Object.keys(center).length > 0) {
         const contentX = x + 16;
-        const contentY = y + 50;
-        const lineHeight = 16;
+        const contentY = y + 40; // 稍微上移起始位置
+        const lineHeight = 14; // 减小行间距
         let currentY = contentY;
                   
         ctx.font = '8px sans-serif';
                   
-        // 第一行：姓名和五行局
+        // 第一行：姓名、性别和五行局
         ctx.fillStyle = '#1e293b';
         ctx.font = '8px sans-serif';
         ctx.fillText(`${center.name || '—'} ${center.gender || '—'} ${center.fiveElements || '—'}`, contentX, currentY);
         currentY += lineHeight;
                   
-        // 第二行：八字
+        // 八字信息标题
+        ctx.fillStyle = '#1e40af';
+        ctx.fillText('八字', contentX, currentY);
+        currentY += lineHeight;
+        
+        // 年柱
         ctx.fillStyle = '#1e293b';
-        ctx.fillText(`八字：${center.bazi || '—'}`, contentX, currentY);
+        ctx.fillText(`年柱：${center.yearPillar || '—'}`, contentX, currentY);
+        currentY += lineHeight;
+        
+        // 月柱
+        ctx.fillStyle = '#1e293b';
+        ctx.fillText(`月柱：${center.monthPillar || '—'}`, contentX, currentY);
+        currentY += lineHeight;
+        
+        // 日柱
+        ctx.fillStyle = '#1e293b';
+        ctx.fillText(`日柱：${center.dayPillar || '—'}`, contentX, currentY);
+        currentY += lineHeight;
+        
+        // 时柱
+        ctx.fillStyle = '#1e293b';
+        ctx.fillText(`时柱：${center.hourPillar || '—'}`, contentX, currentY);
         currentY += lineHeight;
                   
-        // 第三行：真太阳时
+        // 真太阳时
         ctx.fillStyle = '#64748b';
         ctx.fillText(`真太阳时：${center.trueSolarTime || '—'}`, contentX, currentY);
         currentY += lineHeight;
                   
-        // 第四行：钟表时间
-        ctx.fillStyle = '#64748b';
-        ctx.fillText(`钟表时间：${center.clockTime || '—'}`, contentX, currentY);
-        currentY += lineHeight;
-                  
-        // 第五行：农历时间
+        // 农历时间
         ctx.fillStyle = '#64748b';
         ctx.fillText(`${center.lunarDate || '—'}`, contentX, currentY);
         currentY += lineHeight;
                   
-        // 第六行：命主、身主、子斗
+        // 命主、身主、子斗
         ctx.fillStyle = '#1e293b';
-        ctx.fillText(`命主：${center.lifeMaster || '—'} 身主：${center.bodyMaster || '—'} 子斗：${center.ziDou || '—'}`, contentX, currentY);
+        ctx.fillText(`命主：${center.lifeMaster || '—'} 身主：${center.bodyMaster || '—'}`, contentX, currentY);
+        currentY += lineHeight;
+        
+        // 子斗单独一行
+        ctx.fillStyle = '#1e293b';
+        ctx.fillText(`子斗：${center.ziDou || '—'}`, contentX, currentY);
       } else {
         // 如果没有center数据，显示默认信息
         const contentX = x + 16;
