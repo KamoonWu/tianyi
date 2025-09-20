@@ -1,6 +1,9 @@
 // 导入字段优化系统模块
 const { getPalaceFieldData, drawPalaceField, PALACE_FIELD_STRUCTURE } = require('../../utils/palace-field-optimization.js');
 
+// 地支顺序（十二地支）
+const EARTHLY_BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
 Component({
   properties: {
     palaces: {
@@ -164,6 +167,7 @@ Component({
       return name || '';
     },
 
+    // 将宫位数据转换为布局格式
     orderPalacesForLayout(list) {
       console.log('排盘组件接收到的宫位数据:', list);
       
@@ -207,13 +211,22 @@ Component({
         // 使用displayName作为前端显示的宫名，如果没有则使用name
         const displayName = palace.displayName || palace.name;
         
+        // 确保星曜数组存在
+        const stars = Array.isArray(palace.stars) ? palace.stars : [];
+        
+        // 调试输出
+        console.log(`🔍 处理宫位数据: ${displayName}(${palace.branch}), 星曜数量: ${stars.length}`);
+        
         return {
           ...palace,
           name: displayName, // 使用displayName作为前端显示的宫名
-          stars: palace.stars || [],
+          stars: stars,
           gods: palace.gods || [],
           heavenlyStem: palace.heavenlyStem || '',
-          isEmpty: palace.isEmpty || false
+          isEmpty: palace.isEmpty || false,
+          // 确保有branchIndex字段
+          branchIndex: palace.branchIndex !== undefined ? palace.branchIndex : 
+            EARTHLY_BRANCHES.indexOf(palace.branch)
         };
       });
       

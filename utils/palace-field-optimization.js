@@ -415,7 +415,7 @@ function getPalaceFieldData(palace, flowYearData) {
   // 确保宫位名称是动态的，而不是硬编码的
   if (palaceName !== '—') {
     // 如果宫位名称不是"—"，则去掉"宫"字
-    palaceName = palaceName.replace('宫', '');
+    palaceName = palaceName.replace(/宫$/, '');
   }
 
   // 按照优先级排序星曜
@@ -468,6 +468,9 @@ function getPalaceFieldData(palace, flowYearData) {
     ...formattedAuxStars,
     ...categorized.misc
   ];
+
+  // 调试输出
+  console.log(`🔍 宫位字段数据: ${palace.name}(${palace.branch}), 主星: ${formattedMainStars.length}, 辅星: ${formattedAuxStars.length}, 杂耀: ${categorized.misc.length}`);
 
   return {
     // 所有星曜（兼容旧版）

@@ -275,14 +275,14 @@ function convertToGridLayout(palaces) {
     '午': 1,
     '未': 2,
     '申': 3,
+    '辰': 4,
     '酉': 7,
-    '戌': 11,
-    '亥': 15,
-    '子': 14,
-    '丑': 13,
-    '寅': 12,
     '卯': 8,
-    '辰': 4
+    '戌': 11,
+    '寅': 12,
+    '丑': 13,
+    '子': 14,
+    '亥': 15
   };
   
   // 处理每个宫位数据
@@ -296,10 +296,32 @@ function convertToGridLayout(palaces) {
         ...palace,
         displayName: palace.name, // 添加displayName字段，用于前端显示
         isEmpty: false,
-        layoutIndex: gridIndex
+        layoutIndex: gridIndex,
+        // 添加branchIndex字段，用于前端识别地支索引
+        branchIndex: EARTHLY_BRANCHES.indexOf(palace.branch)
       };
+      
+      console.log(`📍 宫位 ${palace.name} (${palace.branch}) 放置在网格位置 ${gridIndex}`);
     } else {
       console.error(`❌ 未找到地支 ${palace.branch} 对应的网格位置`);
+    }
+  });
+  
+  // 确保所有非中宫位置都有数据
+  Object.keys(branchToGridIndex).forEach(branch => {
+    const index = branchToGridIndex[branch];
+    if (!layoutData[index]) {
+      layoutData[index] = {
+        name: '—',
+        branch: branch,
+        stars: [],
+        gods: [],
+        heavenlyStem: '',
+        isEmpty: true,
+        layoutIndex: index,
+        branchIndex: EARTHLY_BRANCHES.indexOf(branch)
+      };
+      console.warn(`⚠️ 网格位置 ${index} (${branch}) 没有对应的宫位数据，使用空数据填充`);
     }
   });
   
