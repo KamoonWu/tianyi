@@ -434,6 +434,15 @@ Component({
       // 优先使用_centerInfo，如果没有则使用center
       const center = this.data._centerInfo || this.data.center || {};
       console.log('🌟 中宫信息:', center);
+  
+      // 检查八字相关字段
+      console.log('🌟 八字信息检查:', {
+        bazi: center.bazi,
+        yearPillar: center.yearPillar,
+        monthPillar: center.monthPillar,
+        dayPillar: center.dayPillar,
+        hourPillar: center.hourPillar
+      });
                 
       // 中宫标题
       ctx.fillStyle = '#1e40af';
