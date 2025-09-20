@@ -756,7 +756,7 @@ function placeMainStars(ziWeiBranch, palaces) {
   const mainStarsPositions = {};
   
   // 紫微系六星：紫微、天机、太阳、武曲、天同、廉贞
-  // 紫微系口诀：紫微天机星逆行，隔一阳武天同行，廉贞反首紫微宫
+  // 紫微系口诀：紫微逆去天机星，隔一太阳武曲辰，连接天同空二宫，廉贞居处方是真
   
   // 1. 安紫微星
   mainStarsPositions['紫微'] = ziWeiBranch;
@@ -768,20 +768,20 @@ function placeMainStars(ziWeiBranch, palaces) {
   mainStarsPositions['天机'] = EARTHLY_BRANCHES[tianJiIndex];
   console.log(`📍 安天机星在${EARTHLY_BRANCHES[tianJiIndex]}宫（紫微逆行一位）`);
   
-  // 3. 安太阳星（紫微顺行三位）
-  const taiYangIndex = (ziWeiIndex + 3) % 12;
+  // 3. 安太阳星（紫微顺行三位，即隔一）
+  const taiYangIndex = (ziWeiIndex + 2) % 12;
   mainStarsPositions['太阳'] = EARTHLY_BRANCHES[taiYangIndex];
-  console.log(`📍 安太阳星在${EARTHLY_BRANCHES[taiYangIndex]}宫（紫微顺行三位）`);
+  console.log(`📍 安太阳星在${EARTHLY_BRANCHES[taiYangIndex]}宫（紫微顺行二位，即隔一）`);
   
-  // 4. 安武曲星（紫微顺行四位）
-  const wuQuIndex = (ziWeiIndex + 4) % 12;
+  // 4. 安武曲星（紫微顺行三位）
+  const wuQuIndex = (ziWeiIndex + 3) % 12;
   mainStarsPositions['武曲'] = EARTHLY_BRANCHES[wuQuIndex];
-  console.log(`📍 安武曲星在${EARTHLY_BRANCHES[wuQuIndex]}宫（紫微顺行四位）`);
+  console.log(`📍 安武曲星在${EARTHLY_BRANCHES[wuQuIndex]}宫（紫微顺行三位）`);
   
-  // 5. 安天同星（紫微顺行五位）
-  const tianTongIndex = (ziWeiIndex + 5) % 12;
+  // 5. 安天同星（紫微顺行四位）
+  const tianTongIndex = (ziWeiIndex + 4) % 12;
   mainStarsPositions['天同'] = EARTHLY_BRANCHES[tianTongIndex];
-  console.log(`📍 安天同星在${EARTHLY_BRANCHES[tianTongIndex]}宫（紫微顺行五位）`);
+  console.log(`📍 安天同星在${EARTHLY_BRANCHES[tianTongIndex]}宫（紫微顺行四位）`);
   
   // 6. 安廉贞星（紫微顺行六位，即对宫）
   const lianZhenIndex = (ziWeiIndex + 6) % 12;
@@ -789,21 +789,22 @@ function placeMainStars(ziWeiBranch, palaces) {
   console.log(`📍 安廉贞星在${EARTHLY_BRANCHES[lianZhenIndex]}宫（紫微顺行六位，对宫）`);
   
   // 天府系八星：天府、太阴、贪狼、巨门、天相、天梁、七杀、破军
-  // 天府系口诀：天府居午宫，顺数至紫微，逆数安天府，余星逐宫布
+  // 天府系口诀：天府南斗令，常对紫微宫，丑卯相更迭，未酉互为根。往来午与戍，蹀躞子和辰，已亥交驰骋，同位在寅申。
   
-  // 7. 安天府星（紫微对宫，即相隔六位）
-  // 注意：天府与廉贞同宫
-  const tianFuIndex = lianZhenIndex;
+  // 7. 安天府星（根据安星诀，天府与紫微相对，即在紫微对宫）
+  const tianFuIndex = (ziWeiIndex + 6) % 12;
   mainStarsPositions['天府'] = EARTHLY_BRANCHES[tianFuIndex];
-  console.log(`📍 安天府星在${EARTHLY_BRANCHES[tianFuIndex]}宫（与廉贞同宫）`);
+  console.log(`📍 安天府星在${EARTHLY_BRANCHES[tianFuIndex]}宫（紫微对宫）`);
   
-  // 8-14. 安其余七颗主星（天府系列，逆行安星）
+  // 8-14. 安其余七颗主星（天府系列，顺行安星）
+  // 天府顺行有太阴，贪狼而后巨门临，随来天相天梁继，七杀空三是破军
   const tianFuStars = ['天府', '太阴', '贪狼', '巨门', '天相', '天梁', '七杀', '破军'];
   
+  // 天府系列星顺行安星
   for (let i = 1; i < tianFuStars.length; i++) {
-    const starIndex = (tianFuIndex - i + 12) % 12;
+    const starIndex = (tianFuIndex + i) % 12;
     mainStarsPositions[tianFuStars[i]] = EARTHLY_BRANCHES[starIndex];
-    console.log(`📍 安${tianFuStars[i]}星在${EARTHLY_BRANCHES[starIndex]}宫（天府逆行${i}位）`);
+    console.log(`📍 安${tianFuStars[i]}星在${EARTHLY_BRANCHES[starIndex]}宫（天府顺行${i}位）`);
   }
   
   // 星曜亮度表（庙、旺、得、利、平、闲、陷）
@@ -898,19 +899,25 @@ function placeAuxiliaryStars(lunarMonth, birthHourBranch, yearStem, yearBranch, 
   // 3. 安禄存
   // 口诀：禄存天干定，甲禄到寅宫，乙禄居卯位，丙戊在巳中，丁己禄在午，庚禄到申中，辛禄居酉位，壬禄亥中逢，癸禄在子中
   const luCunMap = {
-    '甲': '寅', '乙': '卯', '丙': '巳', '丁': '午',
-    '戊': '巳', '己': '午', '庚': '申', '辛': '酉',
-    '壬': '亥', '癸': '子'
+    '甲': '寅',
+    '乙': '卯',
+    '丙': '巳',
+    '丁': '午',
+    '戊': '巳',
+    '己': '午',
+    '庚': '申',
+    '辛': '酉',
+    '壬': '亥',
+    '癸': '子'
   };
   
   if (luCunMap[yearStem]) {
-    const luCunBranch = luCunMap[yearStem];
-    auxStarsPositions['禄存'] = luCunBranch;
-    console.log(`📍 安禄存在${luCunBranch}宫（${yearStem}年禄存安${luCunBranch}）`);
+    auxStarsPositions['禄存'] = luCunMap[yearStem];
+    console.log(`📍 安禄存在${luCunMap[yearStem]}宫（${yearStem}年禄存安${luCunMap[yearStem]}）`);
   }
   
   // 4. 安天马
-  // 口诀：天马常随太岁，寅午戌年在申，申子辰年在寅，巳酉丑年在亥，亥卯未年在巳
+  // 口诀：天马地支起，寅午戌马在申，申子辰马在寅，巳酉丑马在亥，亥卯未马在巳
   let tianMaBranch = '';
   if (['寅', '午', '戌'].includes(yearBranch)) {
     tianMaBranch = '申';
@@ -928,63 +935,88 @@ function placeAuxiliaryStars(lunarMonth, birthHourBranch, yearStem, yearBranch, 
   }
   
   // 5. 安擎羊、陀罗
-  // 口诀：擎羊陀罗天干定，甲羊戌陀辰，乙羊酉陀卯，丙羊申陀寅，丁羊未陀丑，
-  // 戊羊午陀子，己羊巳陀亥，庚羊辰陀戌，辛羊卯陀酉，壬羊寅陀申，癸羊丑陀未
+  // 口诀：甲羊戌上起，乙羊酉上求，丙羊申上起，丁羊未上留，戊羊午上起，己羊巳上求，庚羊辰上起，辛羊卯上留，壬羊寅上起，癸羊丑上求
+  // 口诀：甲陀辰上求，乙陀卯上起，丙陀寅上求，丁陀丑上起，戊陀子上求，己陀亥上起，庚陀戌上求，辛陀酉上起，壬陀申上求，癸陀未上起
   const qingYangMap = {
-    '甲': '戌', '乙': '酉', '丙': '申', '丁': '未',
-    '戊': '午', '己': '巳', '庚': '辰', '辛': '卯',
-    '壬': '寅', '癸': '丑'
+    '甲': '戌',
+    '乙': '酉',
+    '丙': '申',
+    '丁': '未',
+    '戊': '午',
+    '己': '巳',
+    '庚': '辰',
+    '辛': '卯',
+    '壬': '寅',
+    '癸': '丑'
   };
   
   const tuoLuoMap = {
-    '甲': '辰', '乙': '卯', '丙': '寅', '丁': '丑',
-    '戊': '子', '己': '亥', '庚': '戌', '辛': '酉',
-    '壬': '申', '癸': '未'
+    '甲': '辰',
+    '乙': '卯',
+    '丙': '寅',
+    '丁': '丑',
+    '戊': '子',
+    '己': '亥',
+    '庚': '戌',
+    '辛': '酉',
+    '壬': '申',
+    '癸': '未'
   };
   
   if (qingYangMap[yearStem]) {
-    const qingYangBranch = qingYangMap[yearStem];
-    auxStarsPositions['擎羊'] = qingYangBranch;
-    console.log(`📍 安擎羊在${qingYangBranch}宫（${yearStem}年擎羊安${qingYangBranch}）`);
+    auxStarsPositions['擎羊'] = qingYangMap[yearStem];
+    console.log(`📍 安擎羊在${qingYangMap[yearStem]}宫（${yearStem}年擎羊安${qingYangMap[yearStem]}）`);
   }
   
   if (tuoLuoMap[yearStem]) {
-    const tuoLuoBranch = tuoLuoMap[yearStem];
-    auxStarsPositions['陀罗'] = tuoLuoBranch;
-    console.log(`📍 安陀罗在${tuoLuoBranch}宫（${yearStem}年陀罗安${tuoLuoBranch}）`);
+    auxStarsPositions['陀罗'] = tuoLuoMap[yearStem];
+    console.log(`📍 安陀罗在${tuoLuoMap[yearStem]}宫（${yearStem}年陀罗安${tuoLuoMap[yearStem]}）`);
   }
   
   // 6. 安地空、地劫
-  // 口诀：地空地劫年支定，子年居戌辰，丑年在亥巳，寅年居子午，卯年在丑未，
-  // 辰年在寅申，巳年在卯酉，午年在辰戌，未年在巳亥，申年在午子，酉年在未丑，戌年在申寅，亥年在酉卯
+  // 口诀：地空地劫年支定，子年戌辰，丑年亥巳，寅年子午，卯年丑未，辰年寅申，巳年卯酉，午年辰戌，未年巳亥，申年午子，酉年未丑，戌年申寅，亥年酉卯
   const diKongJieMap = {
-    '子': ['戌', '辰'], '丑': ['亥', '巳'], '寅': ['子', '午'], '卯': ['丑', '未'],
-    '辰': ['寅', '申'], '巳': ['卯', '酉'], '午': ['辰', '戌'], '未': ['巳', '亥'],
-    '申': ['午', '子'], '酉': ['未', '丑'], '戌': ['申', '寅'], '亥': ['酉', '卯']
+    '子': ['戌', '辰'],
+    '丑': ['亥', '巳'],
+    '寅': ['子', '午'],
+    '卯': ['丑', '未'],
+    '辰': ['寅', '申'],
+    '巳': ['卯', '酉'],
+    '午': ['辰', '戌'],
+    '未': ['巳', '亥'],
+    '申': ['午', '子'],
+    '酉': ['未', '丑'],
+    '戌': ['申', '寅'],
+    '亥': ['酉', '卯']
   };
   
   if (diKongJieMap[yearBranch]) {
-    const diKongBranch = diKongJieMap[yearBranch][0];
-    const diJieBranch = diKongJieMap[yearBranch][1];
-    
-    auxStarsPositions['地空'] = diKongBranch;
-    auxStarsPositions['地劫'] = diJieBranch;
-    console.log(`📍 安地空在${diKongBranch}宫（${yearBranch}年地空安${diKongBranch}）`);
-    console.log(`📍 安地劫在${diJieBranch}宫（${yearBranch}年地劫安${diJieBranch}）`);
+    auxStarsPositions['地空'] = diKongJieMap[yearBranch][0];
+    auxStarsPositions['地劫'] = diKongJieMap[yearBranch][1];
+    console.log(`📍 安地空在${diKongJieMap[yearBranch][0]}宫（${yearBranch}年地空安${diKongJieMap[yearBranch][0]}）`);
+    console.log(`📍 安地劫在${diKongJieMap[yearBranch][1]}宫（${yearBranch}年地劫安${diKongJieMap[yearBranch][1]}）`);
   }
   
   // 7. 安火星、铃星
-  // 口诀：火铃常随太阴，寅午戌月在寅戌，申子辰月在申辰，巳酉丑月在巳丑，亥卯未月在亥未
-  let fireStarBranch = '';
-  let bellStarBranch = '';
-  
-  // 月支对应表
+  // 口诀：火铃须是月支求，寅午戌月火星寅，铃星则是戌宫真；申子辰月火星申，铃星则是辰宫真；巳酉丑月火星巳，铃星则是丑宫真；亥卯未月火星亥，铃星则是未宫真
   const monthBranchMap = {
-    1: '寅', 2: '卯', 3: '辰', 4: '巳', 5: '午', 6: '未',
-    7: '申', 8: '酉', 9: '戌', 10: '亥', 11: '子', 12: '丑'
+    1: '寅',
+    2: '卯',
+    3: '辰',
+    4: '巳',
+    5: '午',
+    6: '未',
+    7: '申',
+    8: '酉',
+    9: '戌',
+    10: '亥',
+    11: '子',
+    12: '丑'
   };
   
   const monthBranch = monthBranchMap[lunarMonth] || '';
+  let fireStarBranch = '';
+  let bellStarBranch = '';
   
   if (['寅', '午', '戌'].includes(monthBranch)) {
     fireStarBranch = '寅';
@@ -1011,39 +1043,43 @@ function placeAuxiliaryStars(lunarMonth, birthHourBranch, yearStem, yearBranch, 
   }
   
   // 8. 安天魁、天钺
-  // 口诀：天魁天钺天干定，甲戊庚牛羊，乙己鼠猴乡，丙丁猪鸡位，壬癸蛇兔藏，六辛逢马虎
+  // 口诀：甲戊庚牛羊，乙己鼠猴乡，丙丁猪鸡位，壬癸兔蛇藏，六辛逢虎马
   const tianKuiYueMap = {
-    '甲': ['丑', '未'], '乙': ['子', '申'], '丙': ['亥', '酉'], '丁': ['亥', '酉'],
-    '戊': ['丑', '未'], '己': ['子', '申'], '庚': ['丑', '未'], '辛': ['午', '寅'],
-    '壬': ['巳', '卯'], '癸': ['巳', '卯']
+    '甲': ['丑', '未'],
+    '乙': ['子', '申'],
+    '丙': ['亥', '酉'],
+    '丁': ['亥', '酉'],
+    '戊': ['丑', '未'],
+    '己': ['子', '申'],
+    '庚': ['丑', '未'],
+    '辛': ['寅', '午'],
+    '壬': ['卯', '巳'],
+    '癸': ['卯', '巳']
   };
   
   if (tianKuiYueMap[yearStem]) {
-    const tianKuiBranch = tianKuiYueMap[yearStem][0];
-    const tianYueBranch = tianKuiYueMap[yearStem][1];
-    
-    auxStarsPositions['天魁'] = tianKuiBranch;
-    auxStarsPositions['天钺'] = tianYueBranch;
-    console.log(`📍 安天魁在${tianKuiBranch}宫（${yearStem}年天魁安${tianKuiBranch}）`);
-    console.log(`📍 安天钺在${tianYueBranch}宫（${yearStem}年天钺安${tianYueBranch}）`);
+    auxStarsPositions['天魁'] = tianKuiYueMap[yearStem][0];
+    auxStarsPositions['天钺'] = tianKuiYueMap[yearStem][1];
+    console.log(`📍 安天魁在${tianKuiYueMap[yearStem][0]}宫（${yearStem}年天魁安${tianKuiYueMap[yearStem][0]}）`);
+    console.log(`📍 安天钺在${tianKuiYueMap[yearStem][1]}宫（${yearStem}年天钺安${tianKuiYueMap[yearStem][1]}）`);
   }
   
   // 辅星亮度表
   const auxStarBrightness = {
-    '左辅': { '子': '平', '丑': '平', '寅': '庙', '卯': '庙', '辰': '闲', '巳': '旺', '午': '旺', '未': '闲', '申': '陷', '酉': '陷', '戌': '得', '亥': '得' },
-    '右弼': { '子': '平', '丑': '平', '寅': '庙', '卯': '庙', '辰': '闲', '巳': '陷', '午': '陷', '未': '闲', '申': '旺', '酉': '旺', '戌': '得', '亥': '得' },
-    '文昌': { '子': '得', '丑': '得', '寅': '旺', '卯': '旺', '辰': '平', '巳': '平', '午': '庙', '未': '庙', '申': '闲', '酉': '闲', '戌': '陷', '亥': '陷' },
-    '文曲': { '子': '庙', '丑': '庙', '寅': '闲', '卯': '闲', '辰': '陷', '巳': '陷', '午': '得', '未': '得', '申': '平', '酉': '平', '戌': '旺', '亥': '旺' },
-    '禄存': { '子': '旺', '丑': '旺', '寅': '庙', '卯': '庙', '辰': '得', '巳': '得', '午': '平', '未': '平', '申': '闲', '酉': '闲', '戌': '陷', '亥': '陷' },
-    '天马': { '子': '平', '丑': '平', '寅': '庙', '卯': '庙', '辰': '闲', '巳': '庙', '午': '庙', '未': '闲', '申': '庙', '酉': '庙', '戌': '平', '亥': '平' },
-    '擎羊': { '子': '陷', '丑': '陷', '寅': '平', '卯': '平', '辰': '平', '巳': '平', '午': '平', '未': '平', '申': '平', '酉': '平', '戌': '平', '亥': '平' },
-    '陀罗': { '子': '陷', '丑': '陷', '寅': '平', '卯': '平', '辰': '平', '巳': '平', '午': '平', '未': '平', '申': '平', '酉': '平', '戌': '平', '亥': '平' },
-    '地空': { '子': '陷', '丑': '陷', '寅': '平', '卯': '平', '辰': '平', '巳': '平', '午': '平', '未': '平', '申': '平', '酉': '平', '戌': '平', '亥': '平' },
-    '地劫': { '子': '陷', '丑': '陷', '寅': '平', '卯': '平', '辰': '平', '巳': '平', '午': '平', '未': '平', '申': '平', '酉': '平', '戌': '平', '亥': '平' },
-    '火星': { '子': '陷', '丑': '陷', '寅': '旺', '卯': '旺', '辰': '平', '巳': '庙', '午': '庙', '未': '平', '申': '平', '酉': '平', '戌': '闲', '亥': '闲' },
-    '铃星': { '子': '闲', '丑': '闲', '寅': '平', '卯': '平', '辰': '陷', '巳': '陷', '午': '陷', '未': '陷', '申': '庙', '酉': '庙', '戌': '旺', '亥': '旺' },
-    '天魁': { '子': '庙', '丑': '庙', '寅': '闲', '卯': '闲', '辰': '平', '巳': '平', '午': '得', '未': '得', '申': '旺', '酉': '旺', '戌': '平', '亥': '平' },
-    '天钺': { '子': '庙', '丑': '庙', '寅': '闲', '卯': '闲', '辰': '平', '巳': '平', '午': '得', '未': '得', '申': '旺', '酉': '旺', '戌': '平', '亥': '平' }
+    '左辅': { '子': '平', '丑': '平', '寅': '庙', '卯': '庙', '辰': '闲', '巳': '陷', '午': '陷', '未': '闲', '申': '旺', '酉': '旺', '戌': '得', '亥': '得' },
+    '右弼': { '子': '平', '丑': '平', '寅': '陷', '卯': '陷', '辰': '闲', '巳': '庙', '午': '庙', '未': '闲', '申': '得', '酉': '得', '戌': '旺', '亥': '旺' },
+    '文昌': { '子': '平', '丑': '平', '寅': '陷', '卯': '陷', '辰': '闲', '巳': '庙', '午': '庙', '未': '闲', '申': '得', '酉': '得', '戌': '旺', '亥': '旺' },
+    '文曲': { '子': '平', '丑': '平', '寅': '旺', '卯': '旺', '辰': '闲', '巳': '得', '午': '得', '未': '闲', '申': '陷', '酉': '陷', '戌': '庙', '亥': '庙' },
+    '禄存': { '子': '平', '丑': '平', '寅': '平', '卯': '平', '辰': '平', '巳': '平', '午': '平', '未': '平', '申': '平', '酉': '平', '戌': '平', '亥': '平' },
+    '天马': { '子': '平', '丑': '平', '寅': '平', '卯': '平', '辰': '平', '巳': '平', '午': '平', '未': '平', '申': '平', '酉': '平', '戌': '平', '亥': '平' },
+    '擎羊': { '子': '平', '丑': '平', '寅': '平', '卯': '平', '辰': '平', '巳': '平', '午': '平', '未': '平', '申': '平', '酉': '平', '戌': '平', '亥': '平' },
+    '陀罗': { '子': '平', '丑': '平', '寅': '平', '卯': '平', '辰': '平', '巳': '平', '午': '平', '未': '平', '申': '平', '酉': '平', '戌': '平', '亥': '平' },
+    '地空': { '子': '平', '丑': '平', '寅': '平', '卯': '平', '辰': '平', '巳': '平', '午': '平', '未': '平', '申': '平', '酉': '平', '戌': '平', '亥': '平' },
+    '地劫': { '子': '平', '丑': '平', '寅': '平', '卯': '平', '辰': '平', '巳': '平', '午': '平', '未': '平', '申': '平', '酉': '平', '戌': '平', '亥': '平' },
+    '火星': { '子': '平', '丑': '平', '寅': '庙', '卯': '庙', '辰': '闲', '巳': '庙', '午': '庙', '未': '闲', '申': '陷', '酉': '陷', '戌': '旺', '亥': '旺' },
+    '铃星': { '子': '平', '丑': '闲', '寅': '陷', '卯': '陷', '辰': '闲', '巳': '得', '午': '得', '未': '闲', '申': '庙', '酉': '庙', '戌': '旺', '亥': '旺' },
+    '天魁': { '子': '庙', '丑': '庙', '寅': '旺', '卯': '旺', '辰': '闲', '巳': '旺', '午': '旺', '未': '闲', '申': '得', '酉': '得', '戌': '陷', '亥': '陷' },
+    '天钺': { '子': '庙', '丑': '庙', '寅': '旺', '卯': '旺', '辰': '闲', '巳': '旺', '午': '旺', '未': '闲', '申': '得', '酉': '得', '戌': '陷', '亥': '陷' }
   };
   
   // 将辅星添加到宫位数据中

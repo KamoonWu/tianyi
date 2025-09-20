@@ -121,22 +121,22 @@ function testStarPlacement() {
   const ziWeiIndex = branchOrder.indexOf(ziWeiBranch);
   console.log(`  紫微: ${ziWeiBranch}宫`);
   console.log(`  天机: ${branchOrder[(ziWeiIndex - 1 + 12) % 12]}宫 (紫微逆行一位)`);
-  console.log(`  太阳: ${branchOrder[(ziWeiIndex + 3) % 12]}宫 (紫微顺行三位)`);
-  console.log(`  武曲: ${branchOrder[(ziWeiIndex + 4) % 12]}宫 (紫微顺行四位)`);
-  console.log(`  天同: ${branchOrder[(ziWeiIndex + 5) % 12]}宫 (紫微顺行五位)`);
-  console.log(`  廉贞: ${branchOrder[(ziWeiIndex + 6) % 12]}宫 (紫微顺行六位)`);
+  console.log(`  太阳: ${branchOrder[(ziWeiIndex + 2) % 12]}宫 (紫微顺行二位，即隔一)`);
+  console.log(`  武曲: ${branchOrder[(ziWeiIndex + 3) % 12]}宫 (紫微顺行三位)`);
+  console.log(`  天同: ${branchOrder[(ziWeiIndex + 4) % 12]}宫 (紫微顺行四位)`);
+  console.log(`  廉贞: ${branchOrder[(ziWeiIndex + 6) % 12]}宫 (紫微顺行六位，对宫)`);
   
   // 11. 验证天府星系统
   console.log('\n🔍 天府星系统验证:');
   const tianFuIndex = (ziWeiIndex + 6) % 12;
   console.log(`  天府: ${branchOrder[tianFuIndex]}宫 (紫微对宫)`);
-  console.log(`  太阴: ${branchOrder[(tianFuIndex - 1 + 12) % 12]}宫 (天府逆行一位)`);
-  console.log(`  贪狼: ${branchOrder[(tianFuIndex - 2 + 12) % 12]}宫 (天府逆行二位)`);
-  console.log(`  巨门: ${branchOrder[(tianFuIndex - 3 + 12) % 12]}宫 (天府逆行三位)`);
-  console.log(`  天相: ${branchOrder[(tianFuIndex - 4 + 12) % 12]}宫 (天府逆行四位)`);
-  console.log(`  天梁: ${branchOrder[(tianFuIndex - 5 + 12) % 12]}宫 (天府逆行五位)`);
-  console.log(`  七杀: ${branchOrder[(tianFuIndex - 6 + 12) % 12]}宫 (天府逆行六位)`);
-  console.log(`  破军: ${branchOrder[(tianFuIndex - 7 + 12) % 12]}宫 (天府逆行七位)`);
+  console.log(`  太阴: ${branchOrder[(tianFuIndex + 1) % 12]}宫 (天府顺行一位)`);
+  console.log(`  贪狼: ${branchOrder[(tianFuIndex + 2) % 12]}宫 (天府顺行二位)`);
+  console.log(`  巨门: ${branchOrder[(tianFuIndex + 3) % 12]}宫 (天府顺行三位)`);
+  console.log(`  天相: ${branchOrder[(tianFuIndex + 4) % 12]}宫 (天府顺行四位)`);
+  console.log(`  天梁: ${branchOrder[(tianFuIndex + 5) % 12]}宫 (天府顺行五位)`);
+  console.log(`  七杀: ${branchOrder[(tianFuIndex + 6) % 12]}宫 (天府顺行六位)`);
+  console.log(`  破军: ${branchOrder[(tianFuIndex + 7) % 12]}宫 (天府顺行七位)`);
   
   console.log('\n✅ 星曜安放测试完成');
 }
