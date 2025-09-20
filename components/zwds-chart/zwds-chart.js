@@ -29,6 +29,49 @@ Component({
       observer: function(newVal) {
         console.log('🔄 中宫信息更新:', newVal);
         if (newVal && Object.keys(newVal).length > 0) {
+          // 检查八字相关字段是否存在
+          console.log('🔄 八字信息检查:', {
+            bazi: newVal.bazi,
+            yearPillar: newVal.yearPillar,
+            monthPillar: newVal.monthPillar,
+            dayPillar: newVal.dayPillar,
+            hourPillar: newVal.hourPillar
+          });
+          
+          // 确保八字相关字段存在，如果不存在，尝试从bazi字段中提取
+          if (newVal.bazi && (!newVal.yearPillar || !newVal.monthPillar || !newVal.dayPillar || !newVal.hourPillar)) {
+            console.log('🔄 尝试从bazi字段中提取八字信息');
+            
+            // 如果bazi字段存在，但单独的柱子字段不存在，尝试解析
+            const baziParts = newVal.bazi.split(' ');
+            const extractedData = {};
+            
+            baziParts.forEach(part => {
+              if (part.includes('年柱')) {
+                extractedData.yearPillar = part.replace('年柱', '');
+              } else if (part.includes('月柱')) {
+                extractedData.monthPillar = part.replace('月柱', '');
+              } else if (part.includes('日柱')) {
+                extractedData.dayPillar = part.replace('日柱', '');
+              } else if (part.includes('时柱')) {
+                extractedData.hourPillar = part.replace('时柱', '');
+              }
+            });
+            
+            // 合并提取的数据
+            newVal = {
+              ...newVal,
+              ...extractedData
+            };
+            
+            console.log('🔄 提取后的八字信息:', {
+              yearPillar: newVal.yearPillar,
+              monthPillar: newVal.monthPillar,
+              dayPillar: newVal.dayPillar,
+              hourPillar: newVal.hourPillar
+            });
+          }
+          
           this.setData({
             _centerInfo: newVal
           });
@@ -77,15 +120,51 @@ Component({
       
       // 确保初始化时也能正确处理中宫信息
       if (this.data.center && Object.keys(this.data.center).length > 0) {
+        // 检查八字相关字段是否存在
+        const center = this.data.center;
+        console.log('✅ 初始化时八字信息检查:', {
+          bazi: center.bazi,
+          yearPillar: center.yearPillar,
+          monthPillar: center.monthPillar,
+          dayPillar: center.dayPillar,
+          hourPillar: center.hourPillar
+        });
+        
+        // 如果需要，从bazi字段中提取八字信息
+        let updatedCenter = {...center};
+        if (center.bazi && (!center.yearPillar || !center.monthPillar || !center.dayPillar || !center.hourPillar)) {
+          console.log('✅ 初始化时尝试从bazi字段中提取八字信息');
+          
+          const baziParts = center.bazi.split(' ');
+          baziParts.forEach(part => {
+            if (part.includes('年柱')) {
+              updatedCenter.yearPillar = part.replace('年柱', '');
+            } else if (part.includes('月柱')) {
+              updatedCenter.monthPillar = part.replace('月柱', '');
+            } else if (part.includes('日柱')) {
+              updatedCenter.dayPillar = part.replace('日柱', '');
+            } else if (part.includes('时柱')) {
+              updatedCenter.hourPillar = part.replace('时柱', '');
+            }
+          });
+          
+          console.log('✅ 初始化时提取后的八字信息:', {
+            yearPillar: updatedCenter.yearPillar,
+            monthPillar: updatedCenter.monthPillar,
+            dayPillar: updatedCenter.dayPillar,
+            hourPillar: updatedCenter.hourPillar
+          });
+        }
+        
         this.setData({
-          _centerInfo: this.data.center
+          _centerInfo: updatedCenter
         });
       }
       
       this.drawChart();
     },
     detached() {
-      console.log('🔌 排盘组件已分离');
+      console.log('�� 排盘组件已分离');
     }
   },
 
