@@ -530,6 +530,11 @@ Component({
               const fieldConfig = PALACE_FIELD_STRUCTURE[fieldKey];
               const fieldValue = fieldData[fieldKey];
               
+              // 跳过旧版allStars字段，改用新的分类字段
+              if (fieldKey === 'allStars') {
+                return;
+              }
+              
               if (fieldValue) {
                 console.log(`🔍 绘制字段 ${fieldKey}:`, fieldValue);
                 

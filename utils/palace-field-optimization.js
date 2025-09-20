@@ -58,32 +58,76 @@ const STAR_CATEGORIES = {
   fortyEightDeities: { // 48神煞
     color: '#7c3aed', // 紫色，区分于其他分类
     description: '48神煞'
+  },
+  suiQian: { // 新增岁前分类
+    color: '#1e293b',
+    description: '岁前'
+  },
+  jiangQian: { // 新增将前分类
+    color: '#1e293b',
+    description: '将前'
+  },
+  boShi: { // 新增博士分类
+    color: '#1e293b',
+    description: '博士'
   }
 };
 
 // 宫位字段结构定义 - 所有Y坐标增加5px
 const PALACE_FIELD_STRUCTURE = {
-  // 所有星曜：顶部从左到右，每个星曜垂直排列
-  allStars: {
+  // 主星：左上角区域
+  mainStars: {
     x: 2,           // 从左边距2px开始
     y: 2,           // 从顶部2px开始
-    width: 86,      // 可用宽度86px
-    height: 20,     // 高度20px
+    width: 40,      // 可用宽度40px
+    height: 40,     // 高度40px
     align: 'left',
-    category: 'allStars',
+    category: 'main',
     layer: 1,
     horizontal: true,    // 水平排列
     verticalText: true,  // 每个字符垂直排列
-    maxItems: 5,        // 最多显示5个星曜
+    maxItems: 3,        // 最多显示3个主星
     lineHeight: 12,     // 垂直间距12px
-    columnWidth: 8,     // 单列宽度（字符列）
+    columnWidth: 10,     // 单列宽度（字符列）
     columnGap: 2        // 列间距 2px
+  },
+  
+  // 辅星：主星右侧区域
+  auxStars: {
+    x: 36,          // 从左边距36px开始
+    y: 2,           // 从顶部2px开始
+    width: 40,      // 可用宽度40px
+    height: 40,     // 高度40px
+    align: 'left',
+    category: 'auxiliary',
+    layer: 1,
+    horizontal: true,    // 水平排列
+    verticalText: true,  // 每个字符垂直排列
+    maxItems: 3,        // 最多显示3个辅星
+    lineHeight: 12,     // 垂直间距12px
+    columnWidth: 10,     // 单列宽度（字符列）
+    columnGap: 2        // 列间距 2px
+  },
+  
+  // 杂耀：辅星右侧区域
+  miscStars: {
+    x: 70,          // 从左边距70px开始
+    y: 2,           // 从顶部2px开始
+    width: 20,      // 可用宽度20px
+    height: 40,     // 高度40px
+    align: 'left',
+    category: 'misc',
+    layer: 1,
+    horizontal: false,   // 垂直排列
+    verticalText: false, // 水平文字
+    maxItems: 3,        // 最多显示3个杂耀
+    lineHeight: 10,     // 垂直间距10px
   },
 
   // 四化标记（右上角）
   fourTransformations: {
     x: 78,
-    y: 7,           // 从顶部7px开始（原2px + 5px）
+    y: 7,           // 从顶部7px开始
     width: 10,
     height: 12,
     align: 'right',
@@ -94,7 +138,7 @@ const PALACE_FIELD_STRUCTURE = {
   // 流年（中间左侧）
   flowYear: {
     x: 2,
-    y: 29,          // 从顶部29px开始（原24px + 5px）
+    y: 29,          // 从顶部29px开始
     width: 20,
     height: 12,
     align: 'left',
@@ -105,7 +149,7 @@ const PALACE_FIELD_STRUCTURE = {
   // 小限（中间左侧）
   minorLimit: {
     x: 2,
-    y: 41,          // 从顶部41px开始（原36px + 5px）
+    y: 41,          // 从顶部41px开始
     width: 20,
     height: 12,
     align: 'left',
@@ -116,7 +160,7 @@ const PALACE_FIELD_STRUCTURE = {
   // 年龄区间（中间左侧）
   ageRange: {
     x: 2,
-    y: 53,          // 从顶部53px开始（原48px + 5px）
+    y: 53,          // 从顶部53px开始
     width: 20,
     height: 12,
     align: 'left',
@@ -127,24 +171,13 @@ const PALACE_FIELD_STRUCTURE = {
   // 长生十二神（中间右侧）
   longevity: {
     x: 78,
-    y: 95,          // 放在右下角地支上方2px处（heavenlyStemBranch.y 105 - 字高8 - 间距2）
+    y: 95,          // 放在右下角地支上方2px处
     width: 10,
     height: 12,
     align: 'right',
     category: 'longevity',
     layer: 3,
     anchorBottom: 105 - 2 // 与地支顶部保持 2px 距离
-  },
-
-  // 星曜亮度（星曜下方）
-  starBrightness: {
-    x: 2,
-    y: 69,          // 从顶部69px开始（原64px + 5px）
-    width: 86,
-    height: 12,
-    align: 'left',
-    category: 'starBrightness',
-    layer: 3
   },
 
   // 天干地支组合（右下角，垂直排列）
@@ -164,7 +197,7 @@ const PALACE_FIELD_STRUCTURE = {
   // 宫位名称（天干地支左边，紧挨着）
   palaceName: {
     x: 66,  // 距离天干地支2px间距
-    y: 105,         // 从顶部105px开始（原100px + 5px）
+    y: 105,         // 从顶部105px开始
     width: 12,
     height: 16,
     align: 'right',
@@ -185,56 +218,96 @@ const PALACE_FIELD_STRUCTURE = {
     layer: 4,
     // 与天干地支和宫位名称底部对齐
     anchorBottom: 108  // 与heavenlyStemBranch保持一致
+  },
+  
+  // 神煞（中间区域）
+  divineStars: {
+    x: 2,
+    y: 65,
+    width: 86,
+    height: 16,
+    align: 'left',
+    category: 'divine',
+    layer: 4,
+    maxItems: 2,
+    lineHeight: 10
   }
 };
 
 // 星曜分类函数
 function categorizeStars(stars = []) {
   const categories = {
-    main: [],
-    auxiliary: [],
-    fourHua: [],
-    misc: [],
-    fortune: [],
-    longevity: [],
-    ageRange: [],
-    divine: [], // 新增神煞分类
-    brightness: [], // 新增星曜亮度分类
-    suiQian: [], // 岁前12神
+    main: [],      // 14主星
+    auxiliary: [], // 14辅星
+    misc: [],      // 37杂耀
+    fourHua: [],   // 四化星
+    fortune: [],   // 运限流曜
+    longevity: [], // 长生十二神
+    ageRange: [],  // 年龄区间
+    divine: [],    // 48神煞
+    brightness: [], // 星曜亮度
+    suiQian: [],   // 岁前12神
     jiangQian: [], // 将前12神
-    boShi: [] // 博士12神
+    boShi: []      // 博士12神
   };
   
   if (!Array.isArray(stars)) return categories;
+  
+  // 14主星列表
+  const mainStars = [
+    '紫微', '天机', '太阳', '武曲', '天同', '廉贞', 
+    '天府', '太阴', '贪狼', '巨门', '天相', '天梁', '七杀', '破军'
+  ];
+  
+  // 14辅星列表
+  const auxiliaryStars = [
+    '左辅', '右弼', '文昌', '文曲', '天魁', '天钺', 
+    '禄存', '天马', '擎羊', '陀罗', '火星', '铃星', '地空', '地劫'
+  ];
+  
+  // 37杂耀部分列表
+  const miscStars = [
+    '天刑', '天姚', '解神', '天巫', '天月', '阴煞', '台辅', '封诰', 
+    '天空', '天哭', '天虚', '龙池', '凤阁', '红鸾', '天喜', '孤辰', 
+    '寡宿', '蜚廉', '破碎', '天才', '天寿', '天伤', '天使', '天官', 
+    '天福', '天厨', '截空', '旬空', '空亡', '天贵', '天钺', '天厄', 
+    '天煞', '指背', '咸池', '月煞', '亡神'
+  ];
+  
+  // 四化星列表
+  const fourHuaStars = ['禄', '权', '科', '忌'];
+  
+  // 48神煞部分列表
+  const divineStars = [
+    '天乙', '太乙', '文昌', '文曲', '华盖', '金舆', '恩光', '天贵', 
+    '天德', '月德', '天才', '天寿', '截路', '空亡', '旬空', '劫煞', 
+    '灾煞', '天煞', '指背', '咸池', '月煞', '亡神'
+  ];
   
   stars.forEach(star => {
     if (!star || !star.name) return;
     
     const name = star.name;
     const brightness = star.brightness || '';
+    const type = star.type || '';
     
-    // 主星判断
-    if (['紫微', '天机', '太阳', '武曲', '天同', '廉贞', '天府', '太阴', '贪狼', '巨门', '天相', '天梁', '七杀', '破军'].includes(name)) {
+    // 根据类型优先判断
+    if (type === 'main' || mainStars.includes(name)) {
       categories.main.push({ ...star, category: 'main' });
-    }
-    // 辅星判断
-    else if (['左辅', '右弼', '文昌', '文曲', '天魁', '天钺', '禄存', '天马', '擎羊', '陀罗', '火星', '铃星'].includes(name)) {
+    } 
+    else if (type === 'auxiliary' || auxiliaryStars.includes(name)) {
       categories.auxiliary.push({ ...star, category: 'auxiliary' });
     }
     // 四化星判断
-    else if (['禄', '权', '科', '忌'].includes(name)) {
+    else if (fourHuaStars.includes(name) || name.startsWith('化')) {
       categories.fourHua.push({ ...star, category: 'fourHua' });
     }
-    // 杂曜/神煞星判断
-    else if (['天马', '恩光', '天巫', '天福', '空亡', '年解', '天德', '月德', '天乙', '太乙'].includes(name)) {
-      categories.misc.push({ ...star, category: 'misc' });
-    }
     // 运限流曜判断
-    else if (['运禄', '运鸾', '运科', '运忌'].includes(name)) {
+    else if (['运禄', '运鸾', '运科', '运忌'].includes(name) || name.startsWith('运')) {
       categories.fortune.push({ ...star, category: 'fortune' });
     }
     // 长生十二神判断
-    else if (['临官', '将军', '吊客', '岁驿', '长生', '沐浴', '冠带', '临官', '帝旺', '衰', '病', '死', '墓', '绝', '胎', '养'].includes(name)) {
+    else if (['长生', '沐浴', '冠带', '临官', '帝旺', '衰', '病', '死', '墓', '绝', '胎', '养'].includes(name)) {
       categories.longevity.push({ ...star, category: 'longevity' });
     }
     // 年龄区间判断
@@ -242,14 +315,18 @@ function categorizeStars(stars = []) {
       categories.ageRange.push({ ...star, category: 'ageRange' });
     }
     // 神煞判断
-    else if (['天马', '恩光', '天巫', '天福', '空亡', '年解', '天德', '月德', '天乙', '太乙'].includes(name)) {
+    else if (divineStars.includes(name)) {
       categories.divine.push({ ...star, category: 'divine' });
     }
     // 星曜亮度判断
-    else if (brightness) {
+    else if (brightness && typeof brightness === 'string' && brightness.length > 0) {
       categories.brightness.push({ ...star, category: 'brightness' });
     }
     // 其他归类为杂曜
+    else if (miscStars.includes(name) || type === 'misc') {
+      categories.misc.push({ ...star, category: 'misc' });
+    }
+    // 兜底逻辑
     else {
       categories.misc.push({ ...star, category: 'misc' });
     }
@@ -341,16 +418,68 @@ function getPalaceFieldData(palace, flowYearData) {
     palaceName = palaceName.replace('宫', '');
   }
 
-  return {
-    // 所有星曜：按主星、辅星、杂曜顺序合并
-    allStars: [
-      ...categorized.main,
-      ...categorized.auxiliary,
-      ...categorized.misc
-    ],
+  // 按照优先级排序星曜
+  const sortedMainStars = [...categorized.main].sort((a, b) => {
+    // 紫微星最高优先级
+    if (a.name === '紫微') return -1;
+    if (b.name === '紫微') return 1;
+    
+    // 按照主星顺序排序
+    const mainStarOrder = [
+      '紫微', '天机', '太阳', '武曲', '天同', '廉贞', 
+      '天府', '太阴', '贪狼', '巨门', '天相', '天梁', '七杀', '破军'
+    ];
+    return mainStarOrder.indexOf(a.name) - mainStarOrder.indexOf(b.name);
+  });
+  
+  const sortedAuxStars = [...categorized.auxiliary].sort((a, b) => {
+    // 按照辅星顺序排序
+    const auxStarOrder = [
+      '左辅', '右弼', '文昌', '文曲', '天魁', '天钺', 
+      '禄存', '天马', '擎羊', '陀罗', '火星', '铃星', '地空', '地劫'
+    ];
+    return auxStarOrder.indexOf(a.name) - auxStarOrder.indexOf(b.name);
+  });
+  
+  // 格式化星曜亮度显示
+  const formattedMainStars = sortedMainStars.map(star => {
+    if (!star.brightness || star.brightness === '平') {
+      return star; // 平亮度不显示
+    }
+    return {
+      ...star,
+      name: `${star.name}${star.brightness}` // 将亮度附加到名称
+    };
+  });
+  
+  const formattedAuxStars = sortedAuxStars.map(star => {
+    if (!star.brightness || star.brightness === '平') {
+      return star; // 平亮度不显示
+    }
+    return {
+      ...star,
+      name: `${star.name}${star.brightness}` // 将亮度附加到名称
+    };
+  });
+  
+  // 合并星曜，主星在前，辅星其次，杂耀最后（用于兼容旧版展示）
+  const allStars = [
+    ...formattedMainStars,
+    ...formattedAuxStars,
+    ...categorized.misc
+  ];
 
-    // 四化标记（右上角）- 不再展示，置空
-    fourTransformations: null,
+  return {
+    // 所有星曜（兼容旧版）
+    allStars: allStars,
+    
+    // 分类星曜（新版展示）
+    mainStars: formattedMainStars,
+    auxStars: formattedAuxStars,
+    miscStars: categorized.misc,
+
+    // 四化标记
+    fourTransformations: fourHuaFlags.length > 0 ? fourHuaFlags : null,
 
     // 流年信息
     flowYear: formatFlowYear(flowYearData),
@@ -362,8 +491,7 @@ function getPalaceFieldData(palace, flowYearData) {
     palaceName: palaceName,
     leftBottomGods: palace.gods ? palace.gods.map(god => ({ name: god })) : [],
     fourHuaFlags, // 宫级四化
-    divineStars: categorized.divine,
-    starBrightness: categorized.brightness
+    divineStars: categorized.divine
   };
 }
 
