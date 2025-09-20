@@ -1,69 +1,93 @@
-// 测试安星算法
-const { StarPlacement } = require('./star-placement');
+/**
+ * 测试星曜安放系统
+ * 测试五行局、紫微星、十四主星、辅星、流星和四化星的计算
+ */
 
-// 测试用例：1991年1月22日1时，男性，农历
-function testStarPlacement() {
-  console.log('=== 测试安星算法 ===');
-  
-  try {
-    const starPlacement = new StarPlacement(1991, 1, 22, 1, 'male', 'lunar');
-    
-    console.log('基本信息:');
-    console.log('年干:', starPlacement.yearStem);
-    console.log('年支:', starPlacement.yearBranch);
-    console.log('月干:', starPlacement.monthStem);
-    console.log('月支:', starPlacement.monthBranch);
-    console.log('日干:', starPlacement.dayStem);
-    console.log('日支:', starPlacement.dayBranch);
-    console.log('时干:', starPlacement.hourStem);
-    console.log('时支:', starPlacement.hourBranch);
-    console.log('五行局:', starPlacement.wuxingJu);
-    console.log('命宫:', starPlacement.mingGong);
-    console.log('身宫:', starPlacement.shenGong);
-    
-    console.log('\n十二宫:');
-    starPlacement.palaces.forEach((palace, index) => {
-      console.log(`${index + 1}. ${palace.name}: ${palace.branch}`);
-    });
-    
-    console.log('\n主星分布:');
-    const majorStars = starPlacement.placeMajorStars();
-    Object.entries(majorStars).forEach(([branch, stars]) => {
-      console.log(`${branch}: ${stars.join(', ')}`);
-    });
-    
-    console.log('\n辅星分布:');
-    const auxiliaryStars = starPlacement.placeAuxiliaryStars();
-    Object.entries(auxiliaryStars).forEach(([branch, stars]) => {
-      console.log(`${branch}: ${stars.join(', ')}`);
-    });
-    
-    console.log('\n四化星:');
-    const fourTransformations = starPlacement.placeFourTransformations();
-    Object.entries(fourTransformations).forEach(([branch, stars]) => {
-      console.log(`${branch}: ${stars.join(', ')}`);
-    });
-    
-    console.log('\n完整排盘:');
-    const chartData = starPlacement.generateChart();
-    chartData.palaces.forEach((palace, index) => {
-      console.log(`${index + 1}. ${palace.name}(${palace.branch}): ${palace.stars}`);
-    });
-    
-    return chartData;
-    
-  } catch (error) {
-    console.error('测试失败:', error);
-    return null;
-  }
-}
+// 引入宫位计算服务
+const palaceCalculation = require('../services/palace-calculation');
 
-// 导出测试函数
-module.exports = {
-  testStarPlacement
+// 测试用户信息
+const testProfile = {
+  name: '测试用户',
+  date: '1990-01-15',
+  time: '23:30',
+  lunarYear: 1989,
+  lunarMonth: 12,
+  lunarDay: 19,
+  yearStem: '己',
+  yearBranch: '巳',
+  hourBranch: '子',
+  gender: '男'
 };
 
-// 如果直接运行此文件，执行测试
-if (require.main === module) {
-  testStarPlacement();
-} 
+// 测试五行局、紫微星、十四主星、辅星、流星和四化星的计算
+function testStarPlacement() {
+  console.log('🧪 开始测试星曜安放系统');
+  console.log('👤 测试用户信息:', testProfile);
+  
+  // 1. 计算命宫和身宫
+  const mingGongBranch = palaceCalculation.calculateMingGongBranch(testProfile.lunarMonth, testProfile.hourBranch);
+  const shenGongBranch = palaceCalculation.calculateShenGongBranch(testProfile.lunarMonth, testProfile.hourBranch);
+  
+  console.log(`\n📊 命宫: ${mingGongBranch}宫, 身宫: ${shenGongBranch}宫`);
+  
+  // 2. 计算十二宫排列
+  const palaces = palaceCalculation.calculateTwelvePalaces(mingGongBranch);
+  
+  // 3. 计算十二宫天干
+  const palacesWithStems = palaceCalculation.calculateHeavenlyStems(testProfile.yearStem, palaces);
+  
+  // 4. 计算五行局
+  const mingGongPalace = palacesWithStems.find(p => p.name === '命宫');
+  const mingGongStem = mingGongPalace ? mingGongPalace.heavenlyStem : '';
+  
+  const fiveElements = palaceCalculation.calculateFiveElementsPattern(mingGongStem, mingGongBranch);
+  console.log(`\n🔮 五行局: ${fiveElements.name} (${fiveElements.number}局)`);
+  
+  // 5. 安紫微星
+  const ziWeiBranch = palaceCalculation.placeZiWeiStar(testProfile.lunarDay, fiveElements);
+  console.log(`\n🌟 紫微星落宫: ${ziWeiBranch}宫`);
+  
+  // 6. 安十四主星
+  const palacesWithStars = palaceCalculation.placeMainStars(ziWeiBranch, palacesWithStems);
+  
+  // 7. 安辅星
+  const palacesWithAuxStars = palaceCalculation.placeAuxiliaryStars(
+    testProfile.lunarMonth,
+    testProfile.hourBranch,
+    testProfile.yearStem,
+    testProfile.yearBranch,
+    palacesWithStars
+  );
+  
+  // 8. 安四化星
+  const palacesWithFourHua = palaceCalculation.placeFourTransformationStars(testProfile.yearStem, palacesWithAuxStars);
+  
+  // 打印结果
+  console.log('\n📋 十二宫星曜分布:');
+  palacesWithFourHua.forEach(palace => {
+    console.log(`\n📍 ${palace.name} (${palace.heavenlyStem}${palace.branch})`);
+    
+    // 打印主星
+    const mainStars = palace.stars.filter(s => s.type === 'main');
+    if (mainStars.length > 0) {
+      console.log(`  ⭐ 主星: ${mainStars.map(s => `${s.name}${s.brightness || ''}`).join(', ')}`);
+    }
+    
+    // 打印辅星
+    const auxStars = palace.stars.filter(s => s.type === 'auxiliary');
+    if (auxStars.length > 0) {
+      console.log(`  🔹 辅星: ${auxStars.map(s => `${s.name}${s.brightness || ''}`).join(', ')}`);
+    }
+    
+    // 打印四化星
+    if (palace.fourHua && palace.fourHua.length > 0) {
+      console.log(`  🔄 四化: ${palace.fourHua.map(h => `${h.star}化${h.type}`).join(', ')}`);
+    }
+  });
+  
+  console.log('\n✅ 星曜安放测试完成');
+}
+
+// 执行测试
+testStarPlacement(); 
