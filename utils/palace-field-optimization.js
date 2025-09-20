@@ -157,8 +157,8 @@ const PALACE_FIELD_STRUCTURE = {
     category: 'heavenlyStemBranch',
     layer: 5,
     verticalText: true, // 垂直文字
-    // 与宫名底部对齐：palaceName.y(105) + 字高8 = 113
-    anchorBottom: 105 + 8
+    // 与宫位底部对齐，留出5px边距
+    anchorBottom: 108  // 宫位高度约为114px，留出5px边距
   },
 
   // 宫位名称（天干地支左边，紧挨着）
@@ -169,7 +169,9 @@ const PALACE_FIELD_STRUCTURE = {
     height: 16,
     align: 'right',
     category: 'palaceName',
-    layer: 5
+    layer: 5,
+    // 与天干地支底部对齐
+    anchorBottom: 108  // 与heavenlyStemBranch保持一致
   },
 
   // 左下角复合堆叠：岁前 → 将前 → 博士（自下而上），底部与宫名底对齐
@@ -181,8 +183,8 @@ const PALACE_FIELD_STRUCTURE = {
     align: 'left',
     category: 'leftBottomGods',
     layer: 4,
-    // 宫名底部 = palaceName.y(105) + 字高(8) = 113
-    anchorBottom: 105 + 8
+    // 与天干地支和宫位名称底部对齐
+    anchorBottom: 108  // 与heavenlyStemBranch保持一致
   }
 };
 
@@ -313,35 +315,31 @@ function computeBoShiForPalace(palaceBranch, flowYearBranch) {
 }
 
 // 获取宫位字段数据
-function getPalaceFieldData(palace, flowYearData = null) {
-  const stars = palace.stars || [];
-  const categorized = categorizeStars(stars);
+function getPalaceFieldData(palace, flowYearData) {
+  if (!palace) return {};
   
-  const flowYearBranch = flowYearData && (flowYearData.earthlyBranch || flowYearData.branch || '');
-  const palaceBranch = palace.branch || '';
-
-  // 左下角三组：若未从stars分类得到，则按规则补齐每宫一个条目
-  const suiQianArr = (categorized.suiQian && categorized.suiQian.length)
-    ? categorized.suiQian
-    : (flowYearBranch && palaceBranch
-        ? [computeSuiQianForPalace(palaceBranch, flowYearBranch)]
-        : []);
-  const jiangQianArr = (categorized.jiangQian && categorized.jiangQian.length)
-    ? categorized.jiangQian
-    : (flowYearBranch && palaceBranch
-        ? [computeJiangQianForPalace(palaceBranch, flowYearBranch)]
-        : []);
-  const boShiArr = (categorized.boShi && categorized.boShi.length)
-    ? categorized.boShi
-    : (flowYearBranch && palaceBranch
-        ? [computeBoShiForPalace(palaceBranch, flowYearBranch)]
-        : []);
-
-  // 宫级四化标记（仅关心科/忌，供渲染兜底）
-  const fourHuaFlags = {
-    ke: (categorized.fourHua || []).some(h => (h?.name || h) === '科'),
-    ji: (categorized.fourHua || []).some(h => (h?.name || h) === '忌')
-  };
+  // 分类星曜
+  const categorized = categorizeStars(palace.stars);
+  
+  // 处理四化星标记
+  const fourHuaFlags = [];
+  if (palace.fourHua && Array.isArray(palace.fourHua)) {
+    palace.fourHua.forEach(hua => {
+      if (hua.type) {
+        fourHuaFlags.push(hua.type);
+      }
+    });
+  }
+  
+  // 获取宫名，优先使用displayName，如果没有则使用name
+  // 如果palace.isEmpty为true，则显示"—"
+  let palaceName = palace.isEmpty ? '—' : (palace.displayName || palace.name || '');
+  
+  // 确保宫位名称是动态的，而不是硬编码的
+  if (palaceName !== '—') {
+    // 如果宫位名称不是"—"，则去掉"宫"字
+    palaceName = palaceName.replace('宫', '');
+  }
 
   return {
     // 所有星曜：按主星、辅星、杂曜顺序合并
@@ -361,7 +359,7 @@ function getPalaceFieldData(palace, flowYearData = null) {
     longevity: categorized.longevity,
     heavenlyStemBranch: palace.heavenlyStem && palace.branch ? 
       `${palace.heavenlyStem}${palace.branch}` : (palace.branch || ''),
-    palaceName: palace.name ? palace.name.replace('宫', '') : '',
+    palaceName: palaceName,
     leftBottomGods: palace.gods ? palace.gods.map(god => ({ name: god })) : [],
     fourHuaFlags, // 宫级四化
     divineStars: categorized.divine,
@@ -573,6 +571,17 @@ function drawPalaceField(ctx, fieldData, fieldConfig, isHighlighted = false) {
     } else {
       // 普通文字：水平绘制
       const drawX = align === 'right' ? x + width : x;
+      
+      // 如果有anchorBottom属性，进行底部对齐
+      const anchorBottom = Number.isFinite(fieldConfig.anchorBottom) ? fieldConfig.anchorBottom : null;
+      if (anchorBottom && category === 'palaceName') {
+        const fontHeight = 8;
+        const drawY = anchorBottom - fontHeight;
+        
+        console.log(`  📝 底部对齐绘制字符串: "${text}" 在 (${drawX}, ${drawY})`);
+        ctx.fillText(text, drawX, drawY);
+        return;
+      }
       
       console.log(`  📝 绘制字符串: "${text}" 在 (${drawX}, ${y})`);
       ctx.fillText(text, drawX, y);

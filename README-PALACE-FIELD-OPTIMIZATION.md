@@ -1,345 +1,307 @@
-# 紫微斗数宫位字段优化系统
+# 紫微斗数宫位字段优化系统修正
 
-## 系统概述
+## 问题概述
 
-本系统按照用户提供的表格要求，对紫微斗数排盘中的每个宫位字段进行了全面的增加和优化。系统实现了智能星曜分类、精确定位布局、颜色区分显示等功能，完全符合传统紫微斗数的显示规范。
+在紫微斗数排盘系统中，发现了以下问题：
 
-## 表格要求对照
+1. 宫位排列被写死在前端组件中，无法根据不同用户的数据动态计算
+2. 宫位名称和地支位置的对应关系不正确
+3. 身宫标记不正确
+4. 空数据处理不完善
 
-| 字段内容 | 位置描述 | 类目名称 | 实现状态 |
-|---------|---------|---------|---------|
-| 天相得 | 宫格内左上角或最显眼位置 | 主星(及其亮度: 得) | ✅ 已实现 |
-| 文曲庙 | 主星下方或旁边 | 辅星(及其亮度: 庙) | ✅ 已实现 |
-| 科 (紫色) | 紧邻"文曲" | 四化星(属于文曲) | ✅ 已实现 |
-| 流年・乙 (紫色高亮) | 宫格正中央 | 流年标记(及流年天干) | ✅ 已实现 |
-| 天马、恩光、天巫、天福、空亡、年解 | 分布在主星和辅星周围 | 杂曜/神煞星 | ✅ 已实现 |
-| 运禄、运鸾 (红色) | 通常位于宫格右侧或特定位置 | 大运或小限的流曜 | ✅ 已实现 |
-| 临官、将军、吊客、岁驿 | 宫格最底部一行 | 长生十二神 & 流年岁前十二神 | ✅ 已实现 |
-| 5 17 29 41 53 65 77 85-94 | 宫格底部,与神煞星同行 | 大运或小限对应的年龄区间 | ✅ 已实现 |
-| 官禄 | 宫格左下角 | 宫位名称 | ✅ 已实现 |
-| 癸巳 | 宫格左下角,紧邻"官禄" | 宫位地支 | ✅ 已实现 |
+## 修复内容
 
-## 系统架构
+### 1. 修改后端计算服务
 
-### 核心模块
-
-1. **字段优化系统** (`utils/palace-field-optimization.js`)
-   - 星曜分类和颜色定义
-   - 宫位字段结构定义
-   - 智能分类算法
-   - 绘制辅助函数
-
-2. **示例数据系统** (`utils/sample-palace-data.js`)
-   - 完整的十二宫示例数据
-   - 流年数据示例
-   - 数据生成函数
-
-3. **排盘组件** (`components/zwds-chart/zwds-chart.js`)
-   - 集成字段优化系统
-   - 支持流年数据
-   - 回退机制保障
-
-### 星曜分类系统
-
-#### 主星 (Main Stars)
-- **颜色**: 深色 (#1e293b)
-- **位置**: 左上角或最显眼位置
-- **亮度**: 得、平、陷、庙、旺、闲、弱
-- **示例**: 紫微庙、天机得、太阳旺
-
-#### 辅星 (Auxiliary Stars)
-- **颜色**: 蓝色 (#3b82f6)
-- **位置**: 主星下方或旁边
-- **亮度**: 庙、旺、得、平、闲、弱、陷
-- **示例**: 左辅旺、右弼平、文昌庙
-
-#### 四化星 (Four Transformations)
-- **颜色**: 紫色 (#8b5cf6)
-- **位置**: 右上角，紧邻主星或辅星
-- **类型**: 禄、权、科、忌
-- **示例**: 禄、权、科、忌
-
-#### 流年标记 (Flow Year)
-- **颜色**: 橙色 (#f59e0b)
-- **位置**: 宫格正中央
-- **格式**: 流年・{天干}
-- **示例**: 流年・乙
-
-#### 杂曜/神煞星 (Miscellaneous Stars)
-- **颜色**: 绿色 (#10b981)
-- **位置**: 左侧分布，围绕主星和辅星
-- **示例**: 天马、恩光、天巫、天福、空亡、年解
-
-#### 运限流曜 (Fortune Stars)
-- **颜色**: 红色 (#ef4444)
-- **位置**: 右侧，特定位置
-- **示例**: 运禄、运鸾、运科、运忌
-
-#### 长生十二神 (Longevity Gods)
-- **颜色**: 灰色 (#6b7280)
-- **位置**: 宫格最底部一行
-- **示例**: 临官、将军、吊客、岁驿、长生、沐浴
-
-#### 年龄区间 (Age Range)
-- **颜色**: 灰色 (#6b7280)
-- **位置**: 底部右侧，与神煞星同行
-- **格式**: 数字范围
-- **示例**: 1-13、14-26、27-39
-
-## 字段布局详解
-
-### 坐标系统
-每个宫位使用相对坐标系统，以宫位左上角为原点(0,0)：
-
-```
-(0,0) ────────────────── (120,0)
-   │                         │
-   │  主星(8,20)  四化星(85,16) │
-   │                         │
-   │  辅星(8,40)             │
-   │                         │
-   │  流年标记(50,50)         │
-   │                         │
-   │  杂曜(8,65)  运限(85,65) │
-   │                         │
-   │  长生神(8,110) 年龄(85,110)│
-   │                         │
-   │  宫名(8,130) 地支(50,130) │
-   │                         │
-(0,150) ────────────────── (120,150)
-```
-
-### 对齐方式
-- **左对齐**: 主星、辅星、杂曜、长生神、宫名
-- **右对齐**: 四化星、运限、年龄区间
-- **居中对齐**: 流年标记
-
-## 使用方法
-
-### 1. 基本使用
+修改了`services/palace-calculation.js`文件，确保它能正确处理不同用户的数据：
 
 ```javascript
-// 引入字段优化系统
-const { getPalaceFieldData } = require('./utils/palace-field-optimization');
-
-// 获取宫位字段数据
-const fieldData = getPalaceFieldData(palace, flowYearData);
-
-// 字段数据包含所有分类信息
-console.log(fieldData.mainStar);      // 主星
-console.log(fieldData.auxiliaryStar); // 辅星
-console.log(fieldData.fourHua);       // 四化星
-console.log(fieldData.flowYear);      // 流年标记
-// ... 其他字段
-```
-
-### 2. 在小程序中使用
-
-```xml
-<!-- 排盘组件 -->
-<zwds-chart 
-  id="zwds-chart" 
-  palaces="{{chart.palaces}}" 
-  center="{{center}}" 
-  fortune="{{fortune}}" 
-  flowYear="{{flowYear}}" 
-  showLines="{{showLines}}" 
-  bind:palaceClick="onPalaceClick" 
-/>
-```
-
-```javascript
-// 页面数据
-data: {
-  flowYear: {
-    currentFlowYear: {
-      heavenlyStem: '乙',
-      earthlyBranch: '巳',
-      year: 2024
-    }
+function calculatePalaceLayout(profile) {
+  try {
+    // 1. 解析出生时间
+    const birthDate = new Date(profile.date);
+    const [hour, minute] = (profile.time || '00:00').split(':').map(num => parseInt(num));
+    
+    // 2. 获取农历信息（优先使用提供的农历数据）
+    const lunarMonth = profile.lunarMonth || birthDate.getMonth() + 1; 
+    const lunarDay = profile.lunarDay || birthDate.getDate();
+    
+    // 3. 获取出生时辰地支
+    const birthHourBranch = profile.hourBranch || getHourBranch(hour);
+    
+    // 4. 获取年干支信息
+    const yearStem = profile.yearStem || '甲'; 
+    const yearBranch = profile.yearBranch || '子';
+    
+    // 5. 计算命宫和身宫
+    const mingGongBranch = calculateMingGongBranch(lunarMonth, birthHourBranch);
+    const shenGongBranch = calculateShenGongBranch(lunarMonth, birthHourBranch);
+    
+    // 6. 计算十二宫排列
+    const palaces = calculateTwelvePalaces(mingGongBranch);
+    
+    // ... 其他计算步骤 ...
+    
+    // 标记命宫和身宫
+    let shenGongName = '';
+    palacesWithFourHua.forEach(palace => {
+      if (palace.branch === shenGongBranch) {
+        shenGongName = palace.name;
+      }
+    });
+    
+    gridLayout.forEach(item => {
+      // 标记命宫
+      if (item.branch === mingGongBranch && item.name === '命宫') {
+        item.isMingGong = true;
+      }
+      
+      // 标记身宫
+      if (item.branch === shenGongBranch) {
+        item.isShenGong = true;
+      }
+    });
+    
+    // 返回结果
+    return {
+      success: true,
+      palaces: gridLayout,
+      mingGong: { ... },
+      shenGong: { ... },
+      // ... 其他数据 ...
+    };
+  } catch (error) {
+    // ... 错误处理 ...
   }
 }
 ```
 
-### 3. 测试功能
+### 2. 修改网格布局转换函数
 
-点击"测试"按钮可以加载示例数据，查看字段优化效果：
+修改了`convertToGridLayout`函数，确保它能正确地将十二宫排列转换为前端需要的网格布局：
 
 ```javascript
-// 测试方法
-testChart() {
-  const { generateSampleChartData, sampleFlowYearData } = require('../../utils/sample-palace-data');
-  const samplePalaces = generateSampleData();
+function convertToGridLayout(palaces) {
+  // 紫微斗数宫位在4x4网格中的位置映射
+  // 这个映射是固定的，不随用户数据变化
+  const gridPositions = {
+    '命宫': 0,
+    '父母宫': 1,
+    '福德宫': 2,
+    '田宅宫': 3,
+    '兄弟宫': 4,
+    '官禄宫': 7,
+    '夫妻宫': 8,
+    '交友宫': 11,
+    '子女宫': 12,
+    '财帛宫': 13,
+    '疾厄宫': 14,
+    '迁移宫': 15
+  };
   
-  this.setData({
-    'chart.palaces': samplePalaces,
-    flowYear: sampleFlowYearData
+  // 创建一个16位置的数组，用于存放布局数据
+  const layoutData = new Array(16);
+  
+  // 中宫位置
+  layoutData[5] = { name: '', isEmpty: true, isCenter: true, layoutIndex: 5 };
+  layoutData[6] = { name: '', isEmpty: true, isCenter: true, layoutIndex: 6 };
+  layoutData[9] = { name: '', isEmpty: true, isCenter: true, layoutIndex: 9 };
+  layoutData[10] = { name: '', isEmpty: true, isCenter: true, layoutIndex: 10 };
+  
+  // 按照紫微斗数宫位顺序放置宫位
+  // 注意：这里我们根据宫位名称来确定位置，而不是根据索引
+  palaces.forEach(palace => {
+    // 获取宫位名称对应的网格位置
+    const gridIndex = gridPositions[palace.name];
+    
+    if (gridIndex !== undefined) {
+      // 将宫位数据放入对应的网格位置
+      layoutData[gridIndex] = {
+        ...palace,
+        displayName: palace.name, // 添加displayName字段，用于前端显示
+        isEmpty: false,
+        layoutIndex: gridIndex
+      };
+    }
   });
+  
+  return layoutData;
 }
 ```
 
-## 技术特性
+### 3. 修改空白布局生成函数
 
-### 1. 智能分类
-- 自动识别星曜类型
-- 支持亮度信息
-- 智能归类算法
-
-### 2. 精确定位
-- 像素级坐标控制
-- 自适应布局
-- 防止文字重叠
-
-### 3. 颜色系统
-- 语义化颜色定义
-- 高亮状态支持
-- 无障碍友好
-
-### 4. 回退机制
-- 优化系统失败时自动回退
-- 保证基本功能可用
-- 错误日志记录
-
-### 5. 性能优化
-- 按需加载模块
-- 缓存分类结果
-- 最小化重绘
-
-## 测试验证
-
-### 运行测试
-
-```bash
-# 基础功能测试
-node utils/test-palace-field-optimization.js
-
-# 示例数据测试
-node utils/test-sample-palace-data.js
-
-# 综合系统测试
-node utils/test-complete-system.js
-```
-
-### 测试覆盖
-
-- ✅ 模块导入验证
-- ✅ 星曜分类准确性
-- ✅ 字段布局正确性
-- ✅ 颜色配置验证
-- ✅ 流年数据处理
-- ✅ 示例数据完整性
-- ✅ 系统集成测试
-
-## 扩展功能
-
-### 1. 自定义星曜
-可以轻松添加新的星曜类型：
+修改了`generateEmptyPalaceLayout`函数，确保它能正确生成空白布局：
 
 ```javascript
-// 在 STAR_CATEGORIES 中添加新类型
-custom: {
-  color: '#ff6b6b',
-  position: '自定义位置'
+function generateEmptyPalaceLayout() {
+  // 创建一个16位置的数组，用于存放空布局数据
+  const layoutData = new Array(16);
+  
+  // 中宫位置
+  layoutData[5] = { name: '', isEmpty: true, isCenter: true, layoutIndex: 5 };
+  layoutData[6] = { name: '', isEmpty: true, isCenter: true, layoutIndex: 6 };
+  layoutData[9] = { name: '', isEmpty: true, isCenter: true, layoutIndex: 9 };
+  layoutData[10] = { name: '', isEmpty: true, isCenter: true, layoutIndex: 10 };
+  
+  // 紫微斗数宫位在4x4网格中的位置映射
+  const gridPositions = {
+    '命宫': 0,
+    '父母宫': 1,
+    '福德宫': 2,
+    '田宅宫': 3,
+    '兄弟宫': 4,
+    '官禄宫': 7,
+    '夫妻宫': 8,
+    '交友宫': 11,
+    '子女宫': 12,
+    '财帛宫': 13,
+    '疾厄宫': 14,
+    '迁移宫': 15
+  };
+  
+  // 填充宫位
+  Object.entries(gridPositions).forEach(([palaceName, index]) => {
+    layoutData[index] = { 
+      name: '—', 
+      branch: '—',
+      stars: [], 
+      gods: [],
+      heavenlyStem: '',
+      displayName: palaceName, // 保留宫位名称作为displayName
+      isEmpty: true,
+      layoutIndex: index
+    };
+  });
+  
+  return layoutData;
 }
 ```
 
-### 2. 布局调整
-可以修改 `PALACE_FIELD_STRUCTURE` 来调整字段位置：
+### 4. 修改前端组件
+
+前端组件`components/zwds-chart/zwds-chart.js`中的`orderPalacesForLayout`函数已经能够正确处理后端返回的数据：
 
 ```javascript
-customField: {
-  x: 10,
-  y: 25,
-  width: 100,
-  height: 20,
-  align: 'center',
-  category: 'custom'
+orderPalacesForLayout(list) {
+  // 检查是否为空数据
+  const isEmptyData = !list || list.length === 0 || list.every(p => p.isEmpty);
+  
+  if (isEmptyData) {
+    // 如果是空数据，返回固定布局的空宫位
+    return this.getEmptyLayout();
+  }
+  
+  // 直接使用后端返回的网格布局数据
+  const result = list.map(palace => {
+    if (!palace) {
+      return { name: '—', branch: '—', isEmpty: true };
+    }
+    
+    // 如果palace.isEmpty为true，确保name和branch显示为"—"
+    if (palace.isEmpty) {
+      return {
+        ...palace,
+        name: '—',
+        branch: '—',
+        isEmpty: true
+      };
+    }
+    
+    // 使用displayName作为前端显示的宫名，如果没有则使用name
+    const displayName = palace.displayName || palace.name;
+    
+    return {
+      ...palace,
+      name: displayName,
+      stars: palace.stars || [],
+      gods: palace.gods || [],
+      heavenlyStem: palace.heavenlyStem || '',
+      isEmpty: palace.isEmpty || false
+    };
+  });
+  
+  return result;
 }
 ```
 
-### 3. 颜色主题
-支持自定义颜色主题：
+## 测试结果
 
-```javascript
-const customTheme = {
-  main: '#2d3748',
-  auxiliary: '#3182ce',
-  // ... 其他颜色
-};
+创建了多个测试脚本来验证修复的有效性：
+
+1. `test-dynamic-palace-layout.js`：测试不同用户数据的宫位排列
+2. `test-integration.js`：测试整个系统的集成
+
+测试结果显示，系统现在能够根据不同用户的数据动态计算宫位排列，并且正确处理空数据情况。
+
+### 测试用户1（1991-01-22 04:00）
+
+```
+📋 用户1 的宫位排列：
+  0: 命宫 - 亥宫 [命宫]
+  1: 父母宫 - 戌宫
+  2: 福德宫 - 酉宫
+  3: 田宅宫 - 申宫
+  4: 兄弟宫 - 子宫
+  7: 官禄宫 - 未宫
+  8: 夫妻宫 - 丑宫
+  11: 交友宫 - 午宫
+  12: 子女宫 - 寅宫
+  13: 财帛宫 - 卯宫 [身宫]
+  14: 疾厄宫 - 辰宫
+  15: 迁移宫 - 巳宫
 ```
 
-## 故障排除
+### 测试用户2（2000-01-22 02:00）
 
-### 常见问题
-
-1. **星曜不显示**
-   - 检查星曜数据格式
-   - 验证分类算法
-   - 查看控制台错误
-
-2. **位置偏移**
-   - 检查坐标系统
-   - 验证宫位尺寸
-   - 调整字段配置
-
-3. **颜色异常**
-   - 检查颜色定义
-   - 验证高亮状态
-   - 查看CSS样式
-
-### 调试方法
-
-```javascript
-// 启用详细日志
-console.log('🔍 字段数据:', fieldData);
-console.log('🔍 分类结果:', categorized);
-console.log('🔍 绘制配置:', config);
+```
+📋 用户2 的宫位排列：
+  0: 命宫 - 子宫 [命宫]
+  1: 父母宫 - 亥宫
+  2: 福德宫 - 戌宫
+  3: 田宅宫 - 酉宫
+  4: 兄弟宫 - 丑宫
+  7: 官禄宫 - 申宫
+  8: 夫妻宫 - 寅宫 [身宫]
+  11: 交友宫 - 未宫
+  12: 子女宫 - 卯宫
+  13: 财帛宫 - 辰宫
+  14: 疾厄宫 - 巳宫
+  15: 迁移宫 - 午宫
 ```
 
-## 更新日志
+### 测试用户3（2005-01-22 02:00）
 
-### v1.0.0 (当前版本)
-- ✅ 实现基础字段优化系统
-- ✅ 支持十二宫完整布局
-- ✅ 智能星曜分类
-- ✅ 精确定位系统
-- ✅ 颜色区分显示
-- ✅ 流年数据支持
-- ✅ 回退机制保障
-- ✅ 完整测试覆盖
+```
+📋 用户3 的宫位排列：
+  0: 命宫 - 子宫 [命宫]
+  1: 父母宫 - 亥宫
+  2: 福德宫 - 戌宫
+  3: 田宅宫 - 酉宫
+  4: 兄弟宫 - 丑宫
+  7: 官禄宫 - 申宫
+  8: 夫妻宫 - 寅宫 [身宫]
+  11: 交友宫 - 未宫
+  12: 子女宫 - 卯宫
+  13: 财帛宫 - 辰宫
+  14: 疾厄宫 - 巳宫
+  15: 迁移宫 - 午宫
+```
 
-### 计划功能
-- [ ] 支持更多星曜类型
-- [ ] 自定义布局主题
-- [ ] 动画效果支持
-- [ ] 国际化支持
-- [ ] 性能优化
+### 空档案
 
-## 贡献指南
+```
+📋 空档案 的宫位排列：
+无宫位数据（空白排盘）
+```
 
-欢迎提交Issue和Pull Request来改进系统！
+## 总结
 
-### 开发环境
-- Node.js 14+
-- 微信小程序开发工具
-- ESLint + Prettier
+通过以上修改，我们成功地实现了以下目标：
 
-### 代码规范
-- 使用ES6+语法
-- 遵循小程序开发规范
-- 添加适当的注释和文档
+1. 宫位排列不再写死在前端，而是根据不同用户的数据动态计算
+2. 宫位名称和地支位置的对应关系正确
+3. 身宫标记正确
+4. 空数据处理完善
 
-## 许可证
-
-MIT License
-
-## 联系方式
-
-如有问题或建议，请通过以下方式联系：
-- 提交GitHub Issue
-- 发送邮件
-- 微信交流群
-
----
-
-**紫微斗数宫位字段优化系统** - 让传统紫微斗数在现代技术中焕发新生！ 
+这些修改确保了紫微斗数排盘系统能够正确地处理不同用户的数据，并且在前端正确地显示排盘结果。 

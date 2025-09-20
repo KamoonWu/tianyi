@@ -2,6 +2,7 @@ const { buildChartSummary, buildPalaceList, buildFortunes, loadActiveProfile } =
 const { analyzePatterns } = require('../../utils/pattern-analysis');
 const api = require('../../utils/zwds-api');
 const { computeChartWithIztro, computeRawChart } = require('../../utils/iztro-adapter');
+const { calculatePalaceLayout, generateEmptyPalaceLayout } = require('../../services/palace-calculation');
 
 Page({
   data: {
@@ -62,34 +63,138 @@ Page({
     }
   },
 
-  // 计算排盘（使用iztro适配器）
+  // 构建中宫信息
+  buildCenterFromProfile(profile, palaceLayoutResult) {
+    return {
+      name: profile.name || '—',
+      gender: profile.gender || '—',
+      solarDate: profile.date || '—',
+      lunarDate: `农历${palaceLayoutResult.calculation.yearStem || ''}${palaceLayoutResult.calculation.yearBranch || ''}年${palaceLayoutResult.calculation.lunarMonth}月${palaceLayoutResult.calculation.lunarDay}日 ${palaceLayoutResult.calculation.hourName || ''}`,
+      city: profile.city || '—',
+      clockTime: `${profile.date} ${profile.time}`,
+      trueSolarTime: palaceLayoutResult.calculation.trueSolarTime ? `已转换 (${palaceLayoutResult.calculation.trueSolarTime})` : '未转换',
+      lifeMaster: palaceLayoutResult.mingGong.stem || '—', // 命主为命宫天干
+      bodyMaster: palaceLayoutResult.shenGong.stem || '—', // 身主为身宫天干
+      ziDou: palaceLayoutResult.ziWeiBranch || '—', // 紫微星所在地支
+      fiveElements: palaceLayoutResult.fiveElements ? palaceLayoutResult.fiveElements.name : '—', // 五行局
+      mingGong: palaceLayoutResult.mingGong,
+      shenGong: palaceLayoutResult.shenGong,
+      calculation: palaceLayoutResult.calculation
+    };
+  },
+
+  // 从用户资料中提取八字信息
+  extractBaziFromProfile(profile) {
+    // 导入农历转换和八字计算工具
+    const lunarConverter = require('../../utils/lunar-converter');
+    
+    // 如果用户资料中已有完整的农历信息和八字信息，直接使用
+    if (profile.yearStem && profile.yearBranch && 
+        profile.lunarYear && profile.lunarMonth && profile.lunarDay && profile.hourBranch) {
+      console.log('�� 使用用户资料中已有的八字信息');
+      return {
+        yearStem: profile.yearStem,
+        yearBranch: profile.yearBranch,
+        lunarYear: profile.lunarYear,
+        lunarMonth: profile.lunarMonth,
+        lunarDay: profile.lunarDay,
+        hourBranch: profile.hourBranch,
+        hourName: profile.hourName || `${profile.hourBranch}时`,
+        trueSolarTime: profile.trueSolarTime === true ? profile.time : null
+      };
+    }
+    
+    // 否则，使用八字计算工具计算完整八字
+    console.log('📊 计算八字信息');
+    const baziInfo = lunarConverter.calculateBazi(profile);
+    
+    console.log('📊 八字计算结果:', baziInfo);
+    
+    return baziInfo;
+  },
+  
+  // 根据小时数获取时辰地支
+  getHourBranch(hour) {
+    // 这个函数已经移到了lunar-converter.js中，可以删除
+  },
+
+  // 根据地支获取时辰名称
+  getHourName(hourBranch) {
+    // 这个函数已经移到了lunar-converter.js中，可以删除
+  },
+  
+  // 将公历日期转换为农历日期
+  convertSolarToLunar(solarDate) {
+    // 这个函数已经移到了lunar-converter.js中，可以删除
+  },
+
+  // 计算排盘
   calculateChart(profile) {
-    console.log('🧮 开始计算排盘:', profile.name);
+    console.log('🧮 开始计算排盘:', profile);
     
     try {
-      // 首先尝试使用iztro适配器
-      const iztroResult = this.tryIztroCalculation(profile);
+      // 1. 提取八字信息
+      const baziInfo = this.extractBaziFromProfile(profile);
+      console.log('📊 八字信息:', baziInfo);
       
-      if (iztroResult) {
-        console.log('✅ 使用iztro计算成功');
-        const chartData = this.convertIztroToChart(iztroResult, profile);
-        this.setData({ chart: chartData });
-      } else {
-        console.log('⚠️ iztro不可用，使用模拟数据');
-        const chartData = this.generateMockChart(profile);
-        this.setData({ chart: chartData });
+      // 2. 合并八字信息到用户资料
+      const enrichedProfile = {
+        ...profile,
+        ...baziInfo
+      };
+      
+      // 3. 使用后端服务计算宫位布局
+      const palaceLayoutResult = calculatePalaceLayout(enrichedProfile);
+      
+      if (palaceLayoutResult && palaceLayoutResult.success) {
+        console.log('✅ 后端计算成功:', palaceLayoutResult);
+        const chartData = this.buildChartFromPalaceLayout(palaceLayoutResult, enrichedProfile);
+        this.setChartData(chartData);
+        return;
       }
       
-      console.log('✅ 排盘计算完成');
-    } catch (error) {
-      console.error('❌ 排盘计算失败:', error);
+      // 4. 如果后端计算失败，尝试使用iztro计算
+      console.log('⚠️ 后端计算失败，尝试使用iztro计算');
+      const iztroResult = this.tryIztroCalculation(enrichedProfile);
+      
+      if (iztroResult) {
+        console.log('✅ iztro计算成功');
+        const chartData = this.convertIztroToChart(iztroResult, enrichedProfile);
+        this.setChartData(chartData);
+        return;
+      }
+      
+      // 5. 如果所有计算方法都失败，显示空白排盘
+      console.error('❌ 所有计算方法均失败');
       wx.showToast({
         title: '排盘计算失败',
+        icon: 'error'
+      });
+      
+      this.showEmptyChart();
+      
+    } catch (error) {
+      console.error('❌ 排盘计算异常:', error);
+      wx.showToast({
+        title: '排盘计算异常',
         icon: 'error'
       });
       // 失败时显示空白排盘
       this.showEmptyChart();
     }
+  },
+
+  // 将宫位布局结果转换为前端格式
+  buildChartFromPalaceLayout(palaceLayoutResult, profile) {
+    console.log('🔄 转换宫位布局结果为前端格式');
+    
+    // 使用后端返回的网格布局数据
+    const palaces = palaceLayoutResult.palaces || [];
+    
+    return {
+      palaces: palaces,
+      center: this.buildCenterFromProfile(profile, palaceLayoutResult)
+    };
   },
 
   // 尝试使用iztro计算
@@ -283,7 +388,7 @@ Page({
   // 生成模拟宫位数据
   generateMockPalaces(profile) {
     if (profile.id === 'empty') {
-      return this.generateEmptyPalacesWithStructure();
+      return generateEmptyPalaceLayout();
     }
     
     return this.generateMockPalacesWithData(profile);
@@ -393,22 +498,7 @@ Page({
     return mockPalaceData;
   },
 
-  // 生成空白宫位结构
-  generateEmptyPalacesWithStructure() {
-    const standardPalaceNames = [
-      '命宫', '兄弟宫', '夫妻宫', '子女宫', '财帛宫', '疾厄宫',
-      '迁移宫', '交友宫', '官禄宫', '田宅宫', '福德宫', '父母宫'
-    ];
-    
-    return standardPalaceNames.map((name, index) => ({
-      name: name,
-      index: index,
-      branch: '—',
-      heavenlyStem: '—',
-      stars: [],
-      gods: []
-    }));
-  },
+
 
   // 生成模拟星曜数据
   generateMockStars(palaceIndex) {
@@ -480,11 +570,14 @@ Page({
 
   // 显示空白排盘
   showEmptyChart() {
-    console.log('📄 显示空白排盘');
+    console.log('�� 显示空白排盘');
+    
+    // 导入后端服务
+    const { generateEmptyPalaceLayout } = require('../../services/palace-calculation');
     
     this.setData({
       chart: {
-        palaces: this.generateEmptyPalacesWithStructure(),
+        palaces: generateEmptyPalaceLayout(), // 使用后端生成的空白布局
         center: {
           name: '—',
           gender: '—',
@@ -508,6 +601,23 @@ Page({
         }
       }
     });
+  },
+
+  // 设置图表数据
+  setChartData(chartData) {
+    console.log('📊 设置图表数据:', chartData);
+    
+    // 先设置中宫信息，确保它能被正确更新
+    if (chartData.center) {
+      this.setData({ 'chart.center': chartData.center });
+    }
+    
+    // 然后设置宫位数据
+    if (chartData.palaces) {
+      this.setData({ 'chart.palaces': chartData.palaces });
+    }
+    
+    console.log('✅ 排盘计算完成');
   },
 
   // 显示命例选择器 - 使用原生ActionSheet

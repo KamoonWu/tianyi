@@ -6,58 +6,83 @@ Component({
     palaces: {
       type: Array,
       value: [],
-      observer: function(newVal, oldVal) {
-        console.log('🔍 palaces属性观察者触发');
-        console.log('🔍 旧值:', oldVal);
-        console.log('🔍 新值:', newVal);
-        console.log('🔍 数据类型:', typeof newVal);
-        console.log('🔍 数组长度:', newVal ? newVal.length : 0);
-        
+      observer: function(newVal) {
+        console.log('🔄 宫位数据更新:', newVal ? newVal.length : 0);
         if (newVal && newVal.length > 0) {
-          console.log('✅ 检测到新的宫位数据，准备重绘');
-          this.drawChart();
+          this.setData({
+            _layoutData: this.orderPalacesForLayout(newVal)
+          });
+        } else {
+          console.log('⚠️ 宫位数据为空，使用空布局');
+          this.setData({
+            _layoutData: this.getEmptyLayout()
+          });
         }
       }
     },
     center: {
       type: Object,
-      value: null,
-      observer: function(newVal, oldVal) {
-        console.log('🔍 center属性观察者触发:', newVal);
+      value: {},
+      observer: function(newVal) {
+        console.log('🔄 中宫信息更新:', newVal);
+        if (newVal && Object.keys(newVal).length > 0) {
+          this.setData({
+            _centerInfo: newVal
+          });
+          // 当中宫信息更新时，重绘图表
+          this.drawChart();
+        }
       }
     },
     fortune: {
       type: Object,
-      value: null,
-      observer: function(newVal, oldVal) {
-        console.log('🔍 fortune属性观察者触发:', newVal);
-      }
-    },
-    flowYear: {
-      type: Object,
-      value: null,
-      observer: function(newVal, oldVal) {
-        console.log('🔍 flowYear属性观察者触发');
-        console.log('🔍 旧值:', oldVal);
-        console.log('🔍 新值:', newVal);
-        
-        if (newVal) {
-          console.log('✅ 检测到新的流年数据，准备重绘');
-          this.drawChart();
+      value: {
+        currentFlowYear: {
+          heavenlyStem: '乙',
+          earthlyBranch: '巳',
+          year: 2024
         }
       }
+    },
+    // 高亮宫位索引
+    highlightIndices: {
+      type: Array,
+      value: []
+    },
+    // 当前选中宫位索引
+    selectedIndex: {
+      type: Number,
+      value: -1
     }
   },
 
   data: {
-    selectedPalace: null, // 当前选中的宫位
-    highlightedPalaces: [] // 高亮的宫位列表（包括三方四正）
+    _layoutData: [], // 布局后的宫位数据
+    _cells: [], // 宫位单元格数据
+    _centerInfo: {}, // 中宫信息
+    canvasWidth: 0,
+    canvasHeight: 0,
+    devicePixelRatio: 1
   },
 
   lifetimes: {
     attached() {
-      console.log('排盘组件已挂载');
+      console.log('🔌 排盘组件已附加');
+    },
+    ready() {
+      console.log('✅ 排盘组件已准备就绪');
+      
+      // 确保初始化时也能正确处理中宫信息
+      if (this.data.center && Object.keys(this.data.center).length > 0) {
+        this.setData({
+          _centerInfo: this.data.center
+        });
+      }
+      
       this.drawChart();
+    },
+    detached() {
+      console.log('🔌 排盘组件已分离');
     }
   },
 
@@ -140,53 +165,119 @@ Component({
     },
 
     orderPalacesForLayout(list) {
-      // 紫微斗数标准十二宫布局（4x4网格，中间4格合并，周围12格按传统排列）：
-      // 顶行：命宫 | 兄弟宫 | 夫妻宫 | 子女宫
-      // 中行：财帛宫 | [中宫合并区域] | 迁移宫
-      // 中行：疾厄宫 | [用户信息] | 交友宫  
-      // 底行：事业宫 | 田宅宫 | 福德宫 | 父母宫
-      const layoutOrder = [
-        '命宫','兄弟宫','夫妻宫','子女宫',
-        '财帛宫','','','迁移宫',
-        '疾厄宫','','','交友宫',
-        '事业宫','田宅宫','福德宫','父母宫'
-      ];
-      
       console.log('排盘组件接收到的宫位数据:', list);
       
-      const byName = {};
-      (list || []).forEach((p) => {
-        const key = this.normalizePalaceName(p.name || p.label);
-        byName[key] = p;
-        console.log(`映射宫位: ${p.name} -> ${key}`);
-      });
+      // 检查是否为空数据（无数据或长度为0的数组）
+      const isEmptyData = !list || list.length === 0 || list.every(p => p.isEmpty);
+      console.log('是否为空数据:', isEmptyData);
       
-      const result = layoutOrder.map((k) => {
-        if (k === '') {
-          return { name: '', stars: '', isEmpty: true };
-        } else {
-          const palace = byName[k];
-        if (palace) {
-            console.log(`找到宫位 ${k}:`, palace);
-            return palace;
-          } else {
-            console.log(`未找到宫位 ${k}，创建空宫位`);
-            return { name: k, stars: '', isEmpty: true };
-          }
+      if (isEmptyData) {
+        // 如果是空数据，返回固定布局的空宫位
+        return this.getEmptyLayout();
+      }
+      
+      // 直接使用后端返回的网格布局数据
+      // 只需要确保每个宫位数据包含所有必要字段
+      const result = list.map(palace => {
+        if (!palace) {
+          // 如果某个位置没有数据，创建一个空宫位
+          return { 
+            name: '—', 
+            branch: '—',
+            stars: [], 
+            gods: [],
+            heavenlyStem: '',
+            isEmpty: true 
+          };
         }
+        
+        // 如果palace.isEmpty为true，确保name和branch显示为"—"
+        if (palace.isEmpty) {
+          return {
+            ...palace,
+            name: '—',
+            branch: '—',
+            stars: [],
+            gods: [],
+            heavenlyStem: '',
+            isEmpty: true
+          };
+        }
+        
+        // 使用displayName作为前端显示的宫名，如果没有则使用name
+        const displayName = palace.displayName || palace.name;
+        
+        return {
+          ...palace,
+          name: displayName, // 使用displayName作为前端显示的宫名
+          stars: palace.stars || [],
+          gods: palace.gods || [],
+          heavenlyStem: palace.heavenlyStem || '',
+          isEmpty: palace.isEmpty || false
+        };
       });
       
       console.log('布局后的宫位数据:', result);
       return result;
     },
+    
+    // 获取空布局
+    getEmptyLayout() {
+      // 紫微斗数标准十二宫布局（4x4网格，中间4格合并，周围12格按顺时针排列）：
+      // 顶行：命宫 | 父母宫 | 福德宫 | 田宅宫
+      // 中行：兄弟宫 | [中宫合并区域] | 官禄宫
+      // 中行：夫妻宫 | [用户信息] | 交友宫  
+      // 底行：子女宫 | 财帛宫 | 疾厄宫 | 迁移宫
+      
+      // 创建一个16位置的数组，用于存放空布局数据
+      const emptyLayout = new Array(16);
+      
+      // 中宫位置
+      emptyLayout[5] = { name: '', stars: '', isEmpty: true, isCenter: true };
+      emptyLayout[6] = { name: '', stars: '', isEmpty: true, isCenter: true };
+      emptyLayout[9] = { name: '', stars: '', isEmpty: true, isCenter: true };
+      emptyLayout[10] = { name: '', stars: '', isEmpty: true, isCenter: true };
+      
+      // 宫位位置
+      const palacePositions = [0, 1, 2, 3, 4, 7, 8, 11, 12, 13, 14, 15];
+      
+      // 填充宫位
+      palacePositions.forEach(index => {
+        emptyLayout[index] = { 
+          name: '—', 
+          branch: '—',
+          stars: [], 
+          gods: [],
+          heavenlyStem: '',
+          isEmpty: true 
+        };
+      });
+      
+      return emptyLayout;
+    },
 
     drawChart() {
       console.log('🎨 排盘组件开始绘制...');
       console.log('🎨 当前组件数据:', {
-        palaces: this.data.palaces,
+        layoutData: this.data._layoutData,
         center: this.data.center,
+        centerInfo: this.data._centerInfo,
         fortune: this.data.fortune
       });
+      
+      // 确保中宫信息已经更新
+      if (this.data.center && Object.keys(this.data.center).length > 0 && !this.data._centerInfo) {
+        this.setData({
+          _centerInfo: this.data.center
+        });
+      }
+      
+      if (!this.data._layoutData || this.data._layoutData.length === 0) {
+        console.warn('⚠️ 无宫位数据可绘制，使用空布局');
+        this.setData({
+          _layoutData: this.getEmptyLayout()
+        });
+      }
       
       const query = this.createSelectorQuery();
       query.select('#zwdsCanvas').fields({ node: true, size: true }).exec((res) => {
@@ -220,435 +311,57 @@ Component({
         const calculatedH = cellH / rows;
         const h = Math.max(calculatedH, minHeight);
         
-        // 调试信息
-        console.log('宫格布局信息:', {
-          width, height, padding, gap,
-          cellW, cellH, w, h,
-          totalWidth: padding * 2 + cols * w + (cols - 1) * gap,
-          totalHeight: padding * 2 + rows * h + (rows - 1) * gap
+        this.setData({
+          canvasWidth: width,
+          canvasHeight: height,
+          devicePixelRatio: dpr
         });
 
-        ctx.strokeStyle = '#e5e7eb';
-        ctx.lineWidth = 1;
-
-        const fontSmall = 10;
-        const fontNormal = 12;
-        const fontMedium = 14; // Added for new layout
-        const colors = {
-          main: '#7c3aed',
-          aux: '#2563eb',
-          misc: '#ea580c',
-          shensha: '#16a34a',
-          other: '#111827',
-          title: '#374151',
-          line: 'rgba(239,68,68,0.35)',
-          hua: '#dc2626',
-          border: '#d1d5db'
-        };
-
-        // 根据指定布局顺序重排
-        const data = this.orderPalacesForLayout(this.data.palaces || []);
-        this._layoutData = data;
-        this._cells = [];
-        
-        // 修复宫位索引映射
-        let palaceIndex = 0; // 宫位索引计数器
-        
-        for (let r = 0; r < rows; r += 1) {
-          for (let c = 0; c < cols; c += 1) {
-            const idx = r * cols + c;
-            const x = padding + c * (w + gap);
-            const y = padding + r * (h + gap);
-            
-            // 检查是否是中间4个格子（需要合并）
-            const isCenter = (r === 1 || r === 2) && (c === 1 || c === 2);
-            
-            if (isCenter) {
-              if (r === 1 && c === 1) {
-                console.log('🔍 开始绘制中宫区域');
-                // 绘制合并后的中宫区域
-                const centerW = w * 2 + gap;
-                const centerH = h * 2 + gap;
-                
-                // 中宫背景色
-                ctx.fillStyle = 'rgba(147, 197, 253, 0.1)';
-                ctx.fillRect(x, y, centerW, centerH);
-                
-                // 中宫边框
-                ctx.strokeStyle = '#3b82f6';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(x, y, centerW, centerH);
-                
-                this._cells[idx] = { x, y, w: centerW, h: centerH, isCenter: true, skip: true };
-                
-                // 用户信息
-                const center = this.data.center || {};
-                
-                // 中宫标题
-                ctx.fillStyle = '#1e40af';
-                ctx.font = `${fontNormal}px sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.fillText('个人信息', x + centerW / 2, y + 20);
-                ctx.textAlign = 'left';
-                
-                // 直接在这里绘制个人信息内容
-                console.log('🔍 中宫绘制 - center数据:', center);
-                console.log('🔍 中宫绘制 - center.name:', center.name);
-                console.log('🔍 中宫绘制 - center.fiveElements:', center.fiveElements);
-                console.log('🔍 中宫绘制 - 条件判断:', !!(center && (center.name || center.fiveElements)));
-                
-                // 简化条件判断，只要有center数据就绘制
-                if (center && Object.keys(center).length > 0) {
-                  const contentX = x + 16;
-                  const contentY = y + 50;
-                  const lineHeight = 16;
-                  let currentY = contentY;
-                  
-                  ctx.font = '8px sans-serif';
-                  
-                  // 第一行：姓名和五行局
-                  ctx.fillStyle = '#1e293b';
-                  ctx.font = '8px sans-serif';
-                  ctx.fillText(`${center.name || '—'} ${center.fiveElements || '—'}`, contentX, currentY);
-                  currentY += lineHeight;
-                  
-                  // 第二行：真太阳时
-                  ctx.fillStyle = '#64748b';
-                  ctx.fillText(`真太阳时：${center.trueSolarTime || '—'}`, contentX, currentY);
-                  currentY += lineHeight;
-                  
-                  // 第三行：钟表时间
-                  ctx.fillStyle = '#64748b';
-                  ctx.fillText(`钟表时间：${center.clockTime || '—'}`, contentX, currentY);
-                  currentY += lineHeight;
-                  
-                  // 第四行：农历时间
-                  ctx.fillStyle = '#64748b';
-                  ctx.fillText(`${center.lunarTime || '—'}`, contentX, currentY);
-                  currentY += lineHeight;
-                  
-                  // 第五行：命主、身主、子斗
-                  ctx.fillStyle = '#1e293b';
-                  ctx.fillText(`命主：${center.lifeMaster || '—'} 身主：${center.bodyMaster || '—'} 子斗：${center.ziDou || '—'}`, contentX, currentY);
-                  currentY += lineHeight + 4;
-                  
-                  // 四柱信息
-                  if (center.solarTermPillars && center.solarTermPillars.length > 0) {
-                    ctx.fillStyle = '#64748b';
-                    ctx.fillText('节气四柱：', contentX, currentY);
-                    currentY += 12;
-                    
-                    let pillarX = contentX + 8;
-                    center.solarTermPillars.forEach((pillar) => {
-                      ctx.fillStyle = '#1e293b';
-                      ctx.fillText(pillar.heavenlyStem || '—', pillarX, currentY);
-                      ctx.fillText(pillar.earthlyBranch || '—', pillarX, currentY + 10);
-                      pillarX += 20;
-                    });
-                    currentY += 20;
-                  }
-                  
-                  if (center.nonSolarTermPillars && center.nonSolarTermPillars.length > 0) {
-                    ctx.fillStyle = '#64748b';
-                    ctx.fillText('非节气四柱：', contentX, currentY);
-                    currentY += 12;
-                    
-                    let pillarX = contentX + 8;
-                    center.nonSolarTermPillars.forEach((pillar) => {
-                    ctx.fillStyle = '#1e293b';
-                      ctx.fillText(pillar.heavenlyStem || '—', pillarX, currentY);
-                      ctx.fillText(pillar.earthlyBranch || '—', pillarX, currentY + 10);
-                      pillarX += 20;
-                    });
-                  }
-                } else {
-                  // 如果没有center数据，显示默认信息
-                  const contentX = x + 16;
-                  const contentY = y + 50;
-                  const lineHeight = 16;
-                  let currentY = contentY;
-                  
-                  ctx.font = '8px sans-serif';
-                  ctx.fillStyle = '#64748b';
-                  ctx.fillText('请设置个人信息', contentX, currentY);
-                }
-              }
-              // 其他中间格子不绘制，但记录位置信息
-              this._cells[idx] = { x, y, w, h, isCenter: true, skip: true };
-            } else {
-              // 正常绘制12个宫位格子
-              ctx.strokeStyle = colors.border;
-              ctx.lineWidth = 1.5;
-            ctx.strokeRect(x, y, w, h);
-              
-              // 获取宫位信息
-              const palaceInfo = this.getPalaceInfo(idx);
-              this._cells[idx] = { 
-                x, y, w, h, 
-                name: palaceInfo.name,
-                branch: palaceInfo.branch
-              };
-
-              // 宫名 - 已移除左上角宫名显示
-            const title = this.normalizePalaceName((data[idx] && data[idx].name) || '');
-              if (title && !data[idx].isEmpty) {
-                // ctx.fillStyle = colors.title;
-                // ctx.font = `${fontSmall}px sans-serif`;
-                // ctx.fillText(title, x + 8, y + 16); // 左上角宫名已移除
-
-                // 注释掉原有的星曜绘制代码，避免重复绘制和覆盖问题
-                // 星曜显示（按照截图样式优化）
-                /*
-            const names = ((data[idx] && data[idx].starNames) || String((data[idx] && data[idx].stars) || '').split(/\s+/)).filter(Boolean);
-                console.log(`宫位 ${title} 的星曜数据:`, {
-                  name: title,
-                  starNames: data[idx]?.starNames,
-                  stars: data[idx]?.stars,
-                  parsedNames: names
-                });
-                
-            const { classifyStars } = require('../../utils/stars-catalog');
-            const groups = classifyStars(names);
-                console.log(`宫位 ${title} 的星曜分类:`, groups);
-                
-                let currentY = y + 28; // 从宫名下方开始，调整起始位置
-                const lineHeight = 14;
-                const maxLines = Math.floor((h - 40) / lineHeight); // 计算可显示的最大行数，留出更多空间
-                
-                // 主星（紫色，左侧显示）
-                if (groups.main.length > 0) {
-                  ctx.fillStyle = colors.main;
-                  ctx.font = `${fontSmall}px sans-serif`;
-                  const mainText = groups.main.join(' ');
-                  ctx.fillText(mainText, x + 8, currentY); // 调整左边距
-                  currentY += lineHeight;
-                }
-                
-                // 辅星（蓝色，左侧显示）
-                if (groups.aux.length > 0) {
-                  ctx.fillStyle = colors.aux;
-                  ctx.font = `${fontSmall}px sans-serif`;
-                  const auxText = groups.aux.join(' ');
-                  ctx.fillText(auxText, x + 8, currentY); // 调整左边距
-                  currentY += lineHeight;
-                }
-                
-                // 杂曜（橙色，左侧显示）
-                if (groups.misc.length > 0) {
-                  ctx.fillStyle = colors.misc;
-                  ctx.font = `${fontSmall}px sans-serif`;
-                  for (let i = 0; i < Math.min(groups.misc.length, maxLines - Math.floor(currentY - y) / lineHeight); i++) {
-                    ctx.fillText(groups.misc[i], x + 8, currentY); // 调整左边距
-                    currentY += lineHeight;
-                  }
-                }
-                
-                // 神煞（绿色，左侧显示）
-                if (groups.shensha.length > 0) {
-                  ctx.fillStyle = colors.shensha;
-                  ctx.font = `${fontSmall}px sans-serif`;
-                  for (let i = 0; i < Math.min(groups.misc.length, maxLines - Math.floor(currentY - y) / lineHeight); i++) {
-                    ctx.fillText(groups.shensha[i], x + 8, currentY); // 调整左边距
-                    currentY += lineHeight;
-                  }
-                }
-                
-                // 运限星（蓝色，左侧显示）
-                if (groups.fortune.length > 0) {
-                  ctx.fillStyle = colors.aux;
-                  ctx.font = `${fontSmall}px sans-serif`;
-                  for (let i = 0; i < Math.min(groups.fortune.length, maxLines - Math.floor(currentY - y) / lineHeight); i++) {
-                    ctx.fillText(groups.fortune[i], x + 8, currentY); // 调整左边距
-                    currentY += lineHeight;
-                  }
-                }
-                
-                // 四化星（红色，右上角显示）
-                if (groups.fourHua.length > 0) {
-                  ctx.fillStyle = colors.hua;
-                  ctx.font = `${fontSmall}px sans-serif`;
-                  ctx.textAlign = 'right';
-                  ctx.fillText(groups.fourHua.join(' '), x + w - 8, y + 16); // 调整位置，确保在线框内
-        ctx.textAlign = 'left';
-                }
-                
-                // 其他星曜（左侧显示）
-                if (groups.other.length > 0) {
-                  ctx.fillStyle = colors.other;
-                  ctx.font = `${fontSmall}px sans-serif`;
-                  for (let i = 0; i < Math.min(groups.other.length, maxLines - Math.floor(currentY - y) / lineHeight); i++) {
-                    ctx.fillText(groups.other[i], x + 8, currentY); // 调整左边距
-                    currentY += lineHeight;
-                  }
-                }
-                */
-
-                // 四化标记（右上角，红色）
-            const huaText = (data[idx] && data[idx].hua) || '';
-            if (huaText) {
-              ctx.fillStyle = colors.hua;
-              ctx.font = `${fontSmall}px sans-serif`;
-                  ctx.textAlign = 'right';
-                  ctx.fillText(huaText, x + w - 8, y + 16); // 调整位置，确保在线框内
-                  ctx.textAlign = 'left';
-                }
-                
-                // 运限信息（如果有的话）
-                const fortune = this.data.fortune || {};
-                if (fortune.currentPalace === title) {
-                  // 绘制运限标记
-                  ctx.fillStyle = '#fbbf24';
-                  ctx.font = `${fontSmall}px sans-serif`;
-                  ctx.textAlign = 'center';
-                  ctx.fillText('流年', x + w / 2, y + h - 8);
-                  ctx.textAlign = 'left';
-                }
-              }
-            }
-          }
-        }
+        // 存储宫位单元格信息
+        const cells = [];
 
         // 绘制宫位
-        for (let i = 0; i < this._cells.length; i++) {
-          const cell = this._cells[i];
-          if (!cell || cell.skip) continue;
-          
-          const { x, y, w, h } = cell;
-          
-          // 检查是否需要高亮
-          const isHighlighted = this.data.highlightedPalaces.includes(i);
-          
-          console.log(`🔍 开始绘制宫位 ${i}: ${cell.name} (${cell.branch})`);
-          console.log(`  位置: (${x}, ${y}), 尺寸: ${w}x${h}`);
-          console.log(`  高亮状态: ${isHighlighted}`);
-          console.log(`  高亮数组: [${this.data.highlightedPalaces.join(', ')}]`);
-          
-          // 绘制宫位背景
-          if (isHighlighted) {
-            // 高亮背景：透明（不填充颜色）
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; // 保持白色背景
-            ctx.fillRect(x, y, w, h);
-          } else {
-            // 普通背景：白色
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.fillRect(x, y, w, h);
-          }
-          
-          // 绘制宫位边框
-          if (isHighlighted) {
-            // 高亮边框：深黄色，最细线条
-            ctx.strokeStyle = '#d4af37';
-            ctx.lineWidth = 1; // 最细边框
-          } else {
-            // 普通边框：灰色，最细线条
-            ctx.strokeStyle = '#e2e8f0';
-            ctx.lineWidth = 1; // 最细边框
-          }
-          ctx.strokeRect(x, y, w, h);
-          
-          // 测试字段已移除，改为使用后端数据
-          
-          // 使用新的字段优化系统绘制宫位内容
-          try {
-            console.log(`🔍 宫位 ${i} 开始使用字段优化系统`);
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            const index = row * cols + col;
+            const x = padding + col * w;
+            const y = padding + row * h;
             
-            // 检查数据数组
-            console.log(`🔍 数据数组长度: ${data.length}`);
-            console.log(`🔍 当前索引 ${i} 的数据:`, data[i]);
-            
-            console.log(`✅ 字段优化系统模块加载成功`);
-            console.log(`✅ 可用字段:`, Object.keys(PALACE_FIELD_STRUCTURE));
-            
-            // 获取宫位数据 - 使用循环变量i而不是未定义的idx
-            const palaceData = data[i] || {};
-            const flowYearData = this.properties.flowYear?.currentFlowYear || null;
-            
-            console.log(`🔍 宫位 ${i} 数据:`, palaceData);
-            console.log(`🔍 流年数据:`, flowYearData);
-            
-            const fieldData = getPalaceFieldData(palaceData, flowYearData);
-            console.log(`🔍 宫位 ${i} 字段数据:`, fieldData);
-            
-            // 绘制各个字段
-            let drawnFields = 0;
-            Object.keys(PALACE_FIELD_STRUCTURE).forEach(fieldKey => {
-              const fieldConfig = PALACE_FIELD_STRUCTURE[fieldKey];
-              const fieldValue = fieldData[fieldKey];
-              
-              if (fieldValue) {
-                console.log(`🔍 绘制字段 ${fieldKey}:`, fieldValue);
-                
-                // 调整坐标到当前宫位
-                const adjustedConfig = {
-                  ...fieldConfig,
-                  x: x + fieldConfig.x,
-                  y: y + fieldConfig.y
-                };
-                
-                console.log(`🔍 调整后的配置:`, adjustedConfig);
-                drawPalaceField(ctx, fieldValue, adjustedConfig, isHighlighted);
-                drawnFields++;
-              }
-            });
-            
-            console.log(`✅ 宫位 ${i} 字段优化系统绘制完成，共绘制 ${drawnFields} 个字段`);
-            
-          } catch (error) {
-            console.error(`❌ 宫位 ${i} 使用字段优化系统失败，回退到原始绘制方法:`, error);
-            console.error(`❌ 错误堆栈:`, error.stack);
-            
-            // 回退到原始绘制方法
-            this.drawPalaceContentFallback(ctx, cell, x, y, w, h, isHighlighted);
-          }
-        }
-
-        // 连线功能已移除
-
-        // 运限盘功能已移除
-
-        // 三方四正连线（根据选中宫位绘制）
-        const { getSanFangSiZheng, getPalaceIndex } = require('../../utils/palace-lines');
-        const selectedPalace = this.data.selectedPalace;
-        if (selectedPalace) {
-          const targetIdx = getPalaceIndex(selectedPalace);
-          const sfsz = getSanFangSiZheng(selectedPalace);
-          const drawLine = (a, b, color = colors.line) => {
-            const ca = this._cells[a];
-            const cb = this._cells[b];
-            if (!ca || !cb || ca.skip || cb.skip) return;
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
-            ctx.setLineDash([3, 3]);
-            ctx.beginPath();
-            ctx.moveTo(ca.x + ca.w / 2, ca.y + ca.h / 2);
-            ctx.lineTo(cb.x + cb.w / 2, cb.y + cb.h / 2);
-            ctx.stroke();
-            ctx.setLineDash([]);
-          };
-          if (targetIdx >= 0) {
-            // 高亮选中宫位
-            const selectedCell = this._cells[targetIdx];
-            if (selectedCell && !selectedCell.skip) {
-              ctx.strokeStyle = '#ef4444';
-              ctx.lineWidth = 3;
-              ctx.strokeRect(selectedCell.x + 2, selectedCell.y + 2, selectedCell.w - 4, selectedCell.h - 4);
+            // 跳过中宫位置
+            if ((row === 1 || row === 2) && (col === 1 || col === 2)) {
+              cells.push({
+                x, y, w, h,
+                index,
+                skip: true,
+                isCenter: true
+              });
+              continue;
             }
-            // 绘制三方四正连线
-            sfsz.forEach((palaceName) => {
-              const idx = getPalaceIndex(palaceName);
-              if (idx >= 0 && idx !== targetIdx) {
-                drawLine(targetIdx, idx);
-                // 高亮相关宫位
-                const relatedCell = this._cells[idx];
-                if (relatedCell && !relatedCell.skip) {
-                  ctx.strokeStyle = '#f59e0b';
-                  ctx.lineWidth = 2;
-                  ctx.strokeRect(relatedCell.x + 2, relatedCell.y + 2, relatedCell.w - 4, relatedCell.h - 4);
-                }
-              }
+            
+            // 绘制宫位边框
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, w, h);
+            
+            // 存储宫位信息
+            cells.push({
+              x, y, w, h,
+              index,
+              skip: false,
+              isCenter: false
             });
           }
         }
+        
+        this.setData({
+          _cells: cells
+        });
+        
+        // 绘制中宫
+        this.drawCenterArea(ctx, padding + w, padding + h, w * 2, h * 2);
+        
+        // 绘制宫位内容
+        this.drawPalaceContents(ctx);
       });
     },
 
@@ -692,57 +405,162 @@ Component({
       }
     },
 
-    // 获取宫位信息
-    getPalaceInfo(palaceIndex) {
-      // 直接使用布局数据获取宫位信息
-      if (this._layoutData && this._layoutData[palaceIndex]) {
-        const palaceData = this._layoutData[palaceIndex];
-        if (!palaceData.isEmpty) {
-          return {
-            name: palaceData.name || `宫位${palaceIndex}`,
-            branch: palaceData.branch || ''
-          };
-        }
+    // 绘制中宫区域
+    drawCenterArea(ctx, x, y, w, h) {
+      console.log('🌟 开始绘制中宫区域');
+                
+      // 中宫背景色
+      ctx.fillStyle = 'rgba(147, 197, 253, 0.1)';
+      ctx.fillRect(x, y, w, h);
+                
+      // 中宫边框
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, w, h);
+                
+      // 优先使用_centerInfo，如果没有则使用center
+      const center = this.data._centerInfo || this.data.center || {};
+      console.log('🌟 中宫信息:', center);
+                
+      // 中宫标题
+      ctx.fillStyle = '#1e40af';
+      ctx.font = `12px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('个人信息', x + w / 2, y + 20);
+      ctx.textAlign = 'left';
+                
+      // 简化条件判断，只要有center数据就绘制
+      if (center && Object.keys(center).length > 0) {
+        const contentX = x + 16;
+        const contentY = y + 50;
+        const lineHeight = 16;
+        let currentY = contentY;
+                  
+        ctx.font = '8px sans-serif';
+                  
+        // 第一行：姓名和五行局
+        ctx.fillStyle = '#1e293b';
+        ctx.font = '8px sans-serif';
+        ctx.fillText(`${center.name || '—'} ${center.fiveElements || '—'}`, contentX, currentY);
+        currentY += lineHeight;
+                  
+        // 第二行：真太阳时
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(`真太阳时：${center.trueSolarTime || '—'}`, contentX, currentY);
+        currentY += lineHeight;
+                  
+        // 第三行：钟表时间
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(`钟表时间：${center.clockTime || '—'}`, contentX, currentY);
+        currentY += lineHeight;
+                  
+        // 第四行：农历时间
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(`${center.lunarDate || '—'}`, contentX, currentY);
+        currentY += lineHeight;
+                  
+        // 第五行：命主、身主、子斗
+        ctx.fillStyle = '#1e293b';
+        ctx.fillText(`命主：${center.lifeMaster || '—'} 身主：${center.bodyMaster || '—'} 子斗：${center.ziDou || '—'}`, contentX, currentY);
+      } else {
+        // 如果没有center数据，显示默认信息
+        const contentX = x + 16;
+        const contentY = y + 50;
+                  
+        ctx.font = '8px sans-serif';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText('请设置个人信息', contentX, contentY);
       }
-      
-      // 备用方案：返回默认信息
-      return {
-        name: `宫位${palaceIndex}`,
-        branch: ''
-      };
     },
-
-    // 获取宫位数据
-    getPalaceData(palaceIndex) {
-      // 直接使用布局数据获取宫位信息
-      if (this._layoutData && this._layoutData[palaceIndex]) {
-        const palaceData = this._layoutData[palaceIndex];
-        if (!palaceData.isEmpty) {
-          return {
-            name: palaceData.name || `宫位${palaceIndex}`,
-            branch: palaceData.branch || '',
-            index: palaceIndex,
-            stars: palaceData.stars || '',
-            hua: palaceData.hua || ''
-          };
+    
+    // 绘制宫位内容
+    drawPalaceContents(ctx) {
+      if (!this.data._layoutData || !this.data._cells) {
+        console.warn('⚠️ 无宫位数据或单元格数据，无法绘制宫位内容');
+        return;
+                }
+                
+      // 引入字段优化系统
+      const { PALACE_FIELD_STRUCTURE, getPalaceFieldData, drawPalaceField } = require('../../utils/palace-field-optimization');
+      
+      // 遍历所有宫位单元格
+      this.data._cells.forEach((cell, index) => {
+        if (!cell || cell.skip) return;
+          
+          const { x, y, w, h } = cell;
+          
+          // 检查是否需要高亮
+        const isHighlighted = this.data.highlightIndices && this.data.highlightIndices.includes(index);
+        
+        // 获取宫位数据
+        const palaceData = this.data._layoutData[index];
+        if (!palaceData) {
+          console.warn(`⚠️ 索引 ${index} 处没有宫位数据`);
+          return;
         }
-      }
-      
-      // 备用方案：从组件数据获取
-      if (this.data.palaces && this.data.palaces[palaceIndex]) {
-        return this.data.palaces[palaceIndex];
-      }
-      
-      // 最后备用方案：返回基本信息
-      return {
-        name: `宫位${palaceIndex}`,
-        index: palaceIndex
-      };
+          
+        console.log(`🔍 开始绘制宫位 ${index}: ${palaceData.name || '—'} (${palaceData.branch || '—'})`);
+          console.log(`  位置: (${x}, ${y}), 尺寸: ${w}x${h}`);
+          console.log(`  高亮状态: ${isHighlighted}`);
+        console.log(`  高亮数组: [${this.data.highlightIndices ? this.data.highlightIndices.join(', ') : ''}]`);
+          
+        // 使用字段优化系统绘制宫位内容
+          try {
+          console.log(`🔍 宫位 ${index} 开始使用字段优化系统`);
+            
+            // 检查数据数组
+          console.log(`🔍 数据数组长度: ${this.data._layoutData.length}`);
+          console.log(`�� 当前索引 ${index} 的数据:`, palaceData);
+            
+            console.log(`✅ 字段优化系统模块加载成功`);
+            console.log(`✅ 可用字段:`, Object.keys(PALACE_FIELD_STRUCTURE));
+            
+          // 获取流年数据
+          const flowYearData = this.data.fortune?.currentFlowYear || null;
+            
+          console.log(`🔍 宫位 ${index} 数据:`, palaceData);
+            console.log(`🔍 流年数据:`, flowYearData);
+            
+            const fieldData = getPalaceFieldData(palaceData, flowYearData);
+          console.log(`🔍 宫位 ${index} 字段数据:`, fieldData);
+            
+            // 绘制各个字段
+            let drawnFields = 0;
+            Object.keys(PALACE_FIELD_STRUCTURE).forEach(fieldKey => {
+              const fieldConfig = PALACE_FIELD_STRUCTURE[fieldKey];
+              const fieldValue = fieldData[fieldKey];
+              
+              if (fieldValue) {
+                console.log(`🔍 绘制字段 ${fieldKey}:`, fieldValue);
+                
+                // 调整坐标到当前宫位
+                const adjustedConfig = {
+                  ...fieldConfig,
+                  x: x + fieldConfig.x,
+                  y: y + fieldConfig.y
+                };
+                
+              // 如果有anchorBottom属性，也需要调整
+              if (fieldConfig.anchorBottom !== undefined) {
+                adjustedConfig.anchorBottom = y + fieldConfig.anchorBottom;
+              }
+              
+              console.log(`�� 调整后的配置:`, adjustedConfig);
+                drawPalaceField(ctx, fieldValue, adjustedConfig, isHighlighted);
+                drawnFields++;
+              }
+            });
+            
+          console.log(`✅ 宫位 ${index} 字段优化系统绘制完成，共绘制 ${drawnFields} 个字段`);
+          } catch (error) {
+          console.error(`❌ 宫位 ${index} 使用字段优化系统失败:`, error);
+        }
+      });
     },
 
     // 高亮宫位的三方四正关系
     getThreeSidesFourZheng(palaceIndex) {
-      console.log('🔍 计算宫位', palaceIndex, '的三方四正');
+      console.log('�� 计算宫位', palaceIndex, '的三方四正');
       
       if (palaceIndex < 0 || palaceIndex >= this._cells.length) {
         console.log('❌ 宫位索引无效:', palaceIndex);
@@ -808,42 +626,42 @@ Component({
       };
     },
 
-    // 根据用户需求重新设计三方四正关系
+    // 根据新的顺时针宫位布局设计三方四正关系
     getOppositePalaceIndex(palaceIndex) {
-      // 根据用户反馈：点击测试12时，应该高亮测试1、3、11
+      // 对宫关系（相对位置）
       const oppositeMap = {
-        0: 6,   // 命宫(0) ↔ 迁移宫(6)
-        1: 7,   // 兄弟宫(1) ↔ 交友宫(7)
-        2: 12,  // 夫妻宫(2) ↔ 事业宫(12)
-        3: 13,  // 子女宫(3) ↔ 田宅宫(13)
-        4: 14,  // 财帛宫(4) ↔ 福德宫(14)
-        6: 0,   // 迁移宫(6) ↔ 命宫(0)
-        7: 1,   // 交友宫(7) ↔ 兄弟宫(1)
-        8: 15,  // 疾厄宫(8) ↔ 父母宫(15)
-        12: 1,  // 事业宫(12) ↔ 兄弟宫(1) - 用户指定
-        13: 3,  // 田宅宫(13) ↔ 子女宫(3)
-        14: 4,  // 福德宫(14) ↔ 财帛宫(4)
-        15: 8   // 父母宫(15) ↔ 疾厄宫(8)
+        0: 15,  // 命宫(0) ↔ 迁移宫(15)
+        1: 14,  // 父母宫(1) ↔ 疾厄宫(14)
+        2: 13,  // 福德宫(2) ↔ 财帛宫(13)
+        3: 12,  // 田宅宫(3) ↔ 子女宫(12)
+        4: 11,  // 兄弟宫(4) ↔ 交友宫(11)
+        7: 8,   // 官禄宫(7) ↔ 夫妻宫(8)
+        8: 7,   // 夫妻宫(8) ↔ 官禄宫(7)
+        11: 4,  // 交友宫(11) ↔ 兄弟宫(4)
+        12: 3,  // 子女宫(12) ↔ 田宅宫(3)
+        13: 2,  // 财帛宫(13) ↔ 福德宫(2)
+        14: 1,  // 疾厄宫(14) ↔ 父母宫(1)
+        15: 0   // 迁移宫(15) ↔ 命宫(0)
       };
       return oppositeMap[palaceIndex] || -1;
     },
 
-    // 根据用户需求重新设计三合关系
+    // 根据新的顺时针宫位布局设计三合关系
     getSanHePalaceIndices(palaceIndex) {
-      // 根据用户反馈：点击测试12时，应该高亮测试1、3、11
+      // 三合宫关系（地支三合）
       const sanHeMap = {
-        0: [4, 12],   // 命宫(0)：财帛宫(4)、事业宫(12)
-        1: [7, 15],   // 兄弟宫(1)：交友宫(7)、父母宫(15)
-        2: [6, 14],   // 夫妻宫(2)：迁移宫(6)、福德宫(14)
-        3: [7, 15],   // 子女宫(3)：交友宫(7)、父母宫(15)
-        4: [0, 12],   // 财帛宫(4)：命宫(0)、事业宫(12)
-        6: [2, 14],   // 迁移宫(6)：夫妻宫(2)、福德宫(14)
-        7: [1, 15],   // 交友宫(7)：兄弟宫(1)、父母宫(15)
-        8: [1, 13],   // 疾厄宫(8)：兄弟宫(1)、田宅宫(13)
-        12: [3, 7],   // 事业宫(12)：子女宫(3)、交友宫(7) - 用户指定
-        13: [1, 8],   // 田宅宫(13)：兄弟宫(1)、疾厄宫(8)
-        14: [2, 6],   // 福德宫(14)：夫妻宫(2)、迁移宫(6)
-        15: [1, 7]    // 父母宫(15)：兄弟宫(1)、交友宫(7)
+        0: [4, 8],    // 命宫(0)：兄弟宫(4)、夫妻宫(8)
+        1: [7, 11],   // 父母宫(1)：官禄宫(7)、交友宫(11)
+        2: [12, 14],  // 福德宫(2)：子女宫(12)、疾厄宫(14)
+        3: [13, 15],  // 田宅宫(3)：财帛宫(13)、迁移宫(15)
+        4: [0, 8],    // 兄弟宫(4)：命宫(0)、夫妻宫(8)
+        7: [1, 11],   // 官禄宫(7)：父母宫(1)、交友宫(11)
+        8: [0, 4],    // 夫妻宫(8)：命宫(0)、兄弟宫(4)
+        11: [1, 7],   // 交友宫(11)：父母宫(1)、官禄宫(7)
+        12: [2, 14],  // 子女宫(12)：福德宫(2)、疾厄宫(14)
+        13: [3, 15],  // 财帛宫(13)：田宅宫(3)、迁移宫(15)
+        14: [2, 12],  // 疾厄宫(14)：福德宫(2)、子女宫(12)
+        15: [3, 13]   // 迁移宫(15)：田宅宫(3)、财帛宫(13)
       };
       
       const indices = sanHeMap[palaceIndex] || [];
@@ -858,21 +676,20 @@ Component({
 
     // 根据4x4网格布局获取下一个宫位索引
     getNextPalaceIndex(palaceIndex) {
-      // 顺时针顺序（基于实际布局）
+      // 顺时针顺序（基于新布局）
       const nextMap = {
-        0: 1,   // 命宫 → 兄弟宫
-        1: 2,   // 兄弟宫 → 夫妻宫
-        2: 3,   // 夫妻宫 → 子女宫
-        3: 6,   // 子女宫 → 迁移宫
-        4: 0,   // 财帛宫 → 命宫
-        6: 7,   // 迁移宫 → 交友宫
-        7: 8,   // 交友宫 → 疾厄宫
-        8: 11, // 疾厄宫 → 交友宫
-        11: 12, // 交友宫 → 事业宫
-        12: 13, // 事业宫 → 田宅宫
-        13: 14, // 田宅宫 → 福德宫
-        14: 15, // 福德宫 → 父母宫
-        15: 4   // 父母宫 → 财帛宫
+        0: 1,   // 命宫 → 父母宫
+        1: 2,   // 父母宫 → 福德宫
+        2: 3,   // 福德宫 → 田宅宫
+        3: 7,   // 田宅宫 → 官禄宫
+        4: 0,   // 兄弟宫 → 命宫
+        7: 11,  // 官禄宫 → 交友宫
+        8: 4,   // 夫妻宫 → 兄弟宫
+        11: 15, // 交友宫 → 迁移宫
+        12: 8,  // 子女宫 → 夫妻宫
+        13: 12, // 财帛宫 → 子女宫
+        14: 13, // 疾厄宫 → 财帛宫
+        15: 14  // 迁移宫 → 疾厄宫
       };
       
       const nextIndex = nextMap[palaceIndex];
@@ -884,21 +701,20 @@ Component({
 
     // 根据4x4网格布局获取上一个宫位索引
     getPrevPalaceIndex(palaceIndex) {
-      // 逆时针顺序（基于实际布局）
+      // 逆时针顺序（基于新布局）
       const prevMap = {
-        0: 4,   // 命宫 ← 财帛宫
-        1: 0,   // 兄弟宫 ← 命宫
-        2: 1,   // 夫妻宫 ← 兄弟宫
-        3: 2,   // 子女宫 ← 夫妻宫
-        4: 15,  // 财帛宫 ← 父母宫
-        6: 3,   // 迁移宫 ← 子女宫
-        7: 6,   // 交友宫 ← 迁移宫
-        8: 7,   // 疾厄宫 ← 交友宫
-        11: 8,  // 交友宫 ← 疾厄宫
-        12: 11, // 事业宫 ← 交友宫
-        13: 12, // 田宅宫 ← 事业宫
-        14: 13, // 福德宫 ← 田宅宫
-        15: 14  // 父母宫 ← 福德宫
+        0: 4,   // 命宫 ← 兄弟宫
+        1: 0,   // 父母宫 ← 命宫
+        2: 1,   // 福德宫 ← 父母宫
+        3: 2,   // 田宅宫 ← 福德宫
+        4: 8,   // 兄弟宫 ← 夫妻宫
+        7: 3,   // 官禄宫 ← 田宅宫
+        8: 12,  // 夫妻宫 ← 子女宫
+        11: 7,  // 交友宫 ← 官禄宫
+        12: 13, // 子女宫 ← 财帛宫
+        13: 14, // 财帛宫 ← 疾厄宫
+        14: 15, // 疾厄宫 ← 迁移宫
+        15: 11  // 迁移宫 ← 交友宫
       };
       
       const prevIndex = prevMap[palaceIndex];

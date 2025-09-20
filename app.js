@@ -9,11 +9,17 @@ App({
         name: '用户1',
         gender: 'male',
         date: '1991-01-22',
-        time: '02:00',
+        time: '04:00',
         city: '太原市',
         calendarType: 'solar',
         trueSolarTime: true,
-        description: '公历1991年1月22日太原出生的男性'
+        yearStem: '庚',
+        yearBranch: '午',
+        lunarYear: 1990,
+        lunarMonth: 12,
+        lunarDay: 7,
+        hourBranch: '寅',
+        description: '公历1991年1月22日凌晨4点太原出生的男性（农历庚午年十二月初七寅时）'
       },
       {
         id: 'user2', 
@@ -24,7 +30,13 @@ App({
         city: '北京市',
         calendarType: 'solar',
         trueSolarTime: true,
-        description: '2000年1月22日北京出生的女性'
+        yearStem: '己',
+        yearBranch: '卯',
+        lunarYear: 1999,
+        lunarMonth: 12,
+        lunarDay: 16,
+        hourBranch: '丑',
+        description: '2000年1月22日北京出生的女性（农历己卯年十二月十六日丑时）'
       },
       {
         id: 'user3',
@@ -35,7 +47,13 @@ App({
         city: '广州市',
         calendarType: 'solar',
         trueSolarTime: true,
-        description: '2005年1月22日广州出生的女性'
+        yearStem: '甲',
+        yearBranch: '申',
+        lunarYear: 2004,
+        lunarMonth: 12,
+        lunarDay: 12,
+        hourBranch: '丑',
+        description: '2005年1月22日广州出生的女性（农历甲申年十二月十二日丑时）'
       },
       {
         id: 'empty',
